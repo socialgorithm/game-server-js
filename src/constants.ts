@@ -2,6 +2,10 @@ export type Player = string;
 
 export type MessageType = "END" | "UPDATE";
 
+export type ServerOptions = {
+    port: number,
+};
+
 export type GameOptions = {};
 
 export type GameUpdatePayload = {
@@ -24,4 +28,10 @@ export type GameMessage = {
 export type GameServerBindings = {
     startGame: (options: GameOptions) => void;
     onPlayerMessage: (player: Player, payload: any) => void;
+};
+
+export const SOCKET_MESSAGE = {
+    START_GAME: 'startGame',
+    PLAYER_MESSAGE: 'playerMessage',
+    GAME_MESSAGE: 'gameMessage',
 };
