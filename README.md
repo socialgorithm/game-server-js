@@ -2,7 +2,7 @@
 
 Creates a socket server (default port 3333) that serves games. To use this server, you provide functions that will be called on game or player actions, and call functions to communicate with players or to broadcast game state to spectators.
 
-# Integrating
+## Integrating
 
 Install the dependency:
 
@@ -27,6 +27,6 @@ Call functions when you want to communicate with players or broadcast game state
 * `sendPlayerMessage: (player: Player, payload: any) => void;`
 * `sendGameMessage: (messageType: MessageType, payload: any) => void;`
 
-# Example
+## Example
 
 See [tic-tac-toe](https://github.com/socialgorithm/tic-tac-toe) for an example of integration.
