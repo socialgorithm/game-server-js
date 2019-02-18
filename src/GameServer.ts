@@ -6,7 +6,7 @@ import { GameServerBindings, Player, MessageType, ServerOptions, SOCKET_MESSAGE 
 export class GameServer {
     private socket: SocketIO.Server;
 
-    constructor(private serverOptions: ServerOptions, private bindings: GameServerBindings) {
+    constructor(private bindings: GameServerBindings, private serverOptions?: ServerOptions) {
         const app = http.createServer();
         this.socket = io(app);
         const port = serverOptions.port || 3333;

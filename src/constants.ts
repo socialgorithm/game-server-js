@@ -25,11 +25,6 @@ export type GameMessage = {
     payload: any,
 };
 
-export type GameServerBindings = {
-    startGame: (options: GameOptions) => void;
-    onPlayerMessage: (player: Player, payload: any) => void;
-};
-
 export const SOCKET_MESSAGE = {
     START_GAME: 'startGame',
     PLAYER_MESSAGE: 'playerMessage',
