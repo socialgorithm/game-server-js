@@ -1,8 +1,8 @@
 import { GameOptions, Player } from "./constants";
 
 export type GameInputBindings = {
-  startGame: (players: Player[], options: GameOptions) => void;
-  onPlayerMessage: (player: Player, payload: any) => void;
+  startGame: (players: Player[], options: GameOptions) => { id: string };
+  onPlayerMessage: (gameId: string, player: Player, payload: any) => void;
 };
 
 export type GameOutputBindings = {
