@@ -1,4 +1,5 @@
-import { GameServer } from './GameServer';
-import { GameServerBindings, Player, MessageType } from "./constants";
+import { Player } from "./constants";
+import { GameServer } from "./GameServer";
+import { GameInputBindings, GameOutputBindings } from "./GameServerBindings";
 export default GameServer;
-export { GameServerBindings, Player, MessageType, };
+export { GameInputBindings, GameOutputBindings, Player, };

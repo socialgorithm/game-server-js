@@ -26,7 +26,7 @@ export type GameMessage = {
 };
 
 export const SOCKET_MESSAGE = {
-    START_GAME: 'startGame',
-    PLAYER_MESSAGE: 'playerMessage',
-    GAME_MESSAGE: 'gameMessage',
+    GAME_MESSAGE: "gameMessage",
+    PLAYER_MESSAGE: "playerMessage",
+    START_GAME: "startGame",
 };

@@ -27,6 +27,18 @@ Call functions when you want to communicate with players or broadcast game state
 * `sendPlayerMessage: (player: Player, payload: any) => void;`
 * `sendGameMessage: (messageType: MessageType, payload: any) => void;`
 
-## Example
+### Example
 
 See [tic-tac-toe](https://github.com/socialgorithm/tic-tac-toe) for an example of integration.
+
+## Contributing
+
+The rest of this guide is for contributors.
+
+### Publishing to NPM
+
+To publish to NPM, make sure you've incremented the version number and run:
+
+```
+yarn 
+```

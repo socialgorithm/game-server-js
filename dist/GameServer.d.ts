@@ -1,9 +1,11 @@
-import { GameServerBindings, MessageType, ServerOptions } from "./constants";
+import { ServerOptions } from "./constants";
+import { GameInputBindings } from "./GameServerBindings";
 export declare class GameServer {
-    private serverOptions;
-    private bindings;
+    private inputBindings;
+    private serverOptions?;
     private socket;
-    constructor(serverOptions: ServerOptions, bindings: GameServerBindings);
+    constructor(inputBindings: GameInputBindings, serverOptions?: ServerOptions);
     sendPlayerMessage: (player: string, payload: any) => void;
-    sendGameMessage: (type: MessageType, payload: any) => void;
+    sendGameUpdate: (payload: any) => void;
+    sendGameEnd: (payload: any) => void;
 }

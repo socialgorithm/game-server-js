@@ -18,12 +18,8 @@ export declare type GameMessage = {
     type: MessageType;
     payload: any;
 };
-export declare type GameServerBindings = {
-    startGame: (options: GameOptions) => void;
-    onPlayerMessage: (player: Player, payload: any) => void;
-};
 export declare const SOCKET_MESSAGE: {
-    START_GAME: string;
-    PLAYER_MESSAGE: string;
     GAME_MESSAGE: string;
+    PLAYER_MESSAGE: string;
+    START_GAME: string;
 };
