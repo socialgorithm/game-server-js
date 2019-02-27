@@ -13,6 +13,8 @@ export class GameServer {
         const port = serverOptions.port || 3333;
 
         app.listen(port);
+        // tslint:disable-next-line:no-console
+        console.log(`Started Socialgorithm Game Server on ${port}`);
 
         this.socket.on(SOCKET_MESSAGE.START_GAME, this.inputBindings.startGame);
         this.socket.on(SOCKET_MESSAGE.PLAYER_MESSAGE, this.inputBindings.onPlayerMessage);

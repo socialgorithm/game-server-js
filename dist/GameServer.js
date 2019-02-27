@@ -30,6 +30,7 @@ var GameServer = (function () {
         this.socket = io(app);
         var port = serverOptions.port || 3333;
         app.listen(port);
+        console.log("Started Socialgorithm Game Server on " + port);
         this.socket.on(constants_1.SOCKET_MESSAGE.START_GAME, this.inputBindings.startGame);
         this.socket.on(constants_1.SOCKET_MESSAGE.PLAYER_MESSAGE, this.inputBindings.onPlayerMessage);
     }
