@@ -1,7 +1,7 @@
 import { GameOptions, Player } from "./constants";
 
 type OnStartGame = (players: Player[], options: GameOptions) => void;
-type OnPlayerMessage = (players: Player[], options: GameOptions) => void;
+type OnPlayerMessage = (player: Player, payload: any) => void;
 
 export type GameBindings = {
   onStartGame: (fn: OnStartGame) => void;
