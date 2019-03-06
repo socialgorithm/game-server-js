@@ -4,36 +4,58 @@ var http = require("http");
 var io = require("socket.io");
 var constants_1 = require("./constants");
 var GameServer = (function () {
-    function GameServer(inputBindings, serverOptions) {
+    function GameServer(onConnection, serverOptions) {
         var _this = this;
-        this.inputBindings = inputBindings;
         this.serverOptions = serverOptions;
-        this.sendPlayerMessage = function (player, payload) {
-            _this.io.emit(constants_1.SOCKET_MESSAGE.GAME__PLAYER, {
+        this.sendPlayerMessage = function (socket) { return function (player, payload) {
+            socket.emit(constants_1.SOCKET_MESSAGE.GAME__PLAYER, {
                 payload: payload,
                 player: player
             });
-        };
-        this.sendGameUpdate = function (payload) {
-            _this.io.emit(constants_1.SOCKET_MESSAGE.UPDATE, {
+        }; };
+        this.sendGameUpdate = function (socket) { return function (payload) {
+            socket.emit(constants_1.SOCKET_MESSAGE.UPDATE, {
                 payload: payload
             });
-        };
-        this.sendGameEnd = function (payload) {
-            _this.io.emit(constants_1.SOCKET_MESSAGE.GAME_ENDED, {
+        }; };
+        this.sendGameEnd = function (socket) { return function (payload) {
+            socket.emit(constants_1.SOCKET_MESSAGE.GAME_ENDED, {
                 payload: payload
             });
-        };
+        }; };
         var app = http.createServer();
         this.io = io(app);
         var port = serverOptions.port || 3333;
         app.listen(port);
         console.log("Started Socialgorithm Game Server on " + port);
         this.io.on("connection", function (socket) {
-            socket.on(constants_1.SOCKET_MESSAGE.START_GAME, _this.inputBindings.startGame);
-            socket.on(constants_1.SOCKET_MESSAGE.GAME__PLAYER, _this.inputBindings.onPlayerMessage);
+            var inputBindings = {
+                onPlayerMessage: _this.unimplementedWarning,
+                onStartGame: _this.unimplementedWarning
+            };
+            var bindings = {
+                onPlayerMessage: function (onPlayerMessage) {
+                    inputBindings.onPlayerMessage = onPlayerMessage;
+                },
+                onStartGame: function (onStartGame) {
+                    inputBindings.onStartGame = onStartGame;
+                },
+                sendGameEnd: _this.sendGameEnd(socket),
+                sendGameUpdate: _this.sendGameUpdate(socket),
+                sendPlayerMessage: _this.sendPlayerMessage(socket)
+            };
+            onConnection(bindings);
+            socket.on(constants_1.SOCKET_MESSAGE.START_GAME, function (data) {
+                inputBindings.onStartGame(data);
+            });
+            socket.on(constants_1.SOCKET_MESSAGE.GAME__PLAYER, function (data) {
+                inputBindings.onPlayerMessage(data);
+            });
         });
     }
+    GameServer.prototype.unimplementedWarning = function () {
+        console.log("Error: Please provide an implementation for startGame");
+    };
     return GameServer;
 }());
 exports.GameServer = GameServer;

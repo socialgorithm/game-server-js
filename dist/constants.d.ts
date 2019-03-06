@@ -1,3 +1,4 @@
+import { GameBindings } from ".";
 export declare type Player = string;
 export declare type MessageType = "END" | "UPDATE";
 export declare type ServerOptions = {
@@ -24,3 +25,4 @@ export declare const SOCKET_MESSAGE: {
     START_GAME: string;
     UPDATE: string;
 };
+export declare type OnConnection = (bindings: GameBindings) => void;

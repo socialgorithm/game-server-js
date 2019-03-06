@@ -1,3 +1,5 @@
+import { GameBindings } from ".";
+
 export type Player = string;
 
 export type MessageType = "END" | "UPDATE";
@@ -31,3 +33,5 @@ export const SOCKET_MESSAGE = {
     START_GAME: "START_GAME",
     UPDATE: "UPDATE",
 };
+
+export type OnConnection = (bindings: GameBindings) => void;
