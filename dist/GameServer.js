@@ -9,28 +9,30 @@ var GameServer = (function () {
         this.inputBindings = inputBindings;
         this.serverOptions = serverOptions;
         this.sendPlayerMessage = function (player, payload) {
-            _this.socket.send(constants_1.SOCKET_MESSAGE.GAME__PLAYER, {
+            _this.io.emit(constants_1.SOCKET_MESSAGE.GAME__PLAYER, {
                 payload: payload,
                 player: player
             });
         };
         this.sendGameUpdate = function (payload) {
-            _this.socket.send(constants_1.SOCKET_MESSAGE.UPDATE, {
+            _this.io.emit(constants_1.SOCKET_MESSAGE.UPDATE, {
                 payload: payload
             });
         };
         this.sendGameEnd = function (payload) {
-            _this.socket.send(constants_1.SOCKET_MESSAGE.GAME_ENDED, {
+            _this.io.emit(constants_1.SOCKET_MESSAGE.GAME_ENDED, {
                 payload: payload
             });
         };
         var app = http.createServer();
-        this.socket = io(app);
+        this.io = io(app);
         var port = serverOptions.port || 3333;
         app.listen(port);
         console.log("Started Socialgorithm Game Server on " + port);
-        this.socket.on(constants_1.SOCKET_MESSAGE.START_GAME, this.inputBindings.startGame);
-        this.socket.on(constants_1.SOCKET_MESSAGE.GAME__PLAYER, this.inputBindings.onPlayerMessage);
+        this.io.on("connection", function (socket) {
+            socket.on(constants_1.SOCKET_MESSAGE.START_GAME, _this.inputBindings.startGame);
+            socket.on(constants_1.SOCKET_MESSAGE.GAME__PLAYER, _this.inputBindings.onPlayerMessage);
+        });
     }
     return GameServer;
 }());
