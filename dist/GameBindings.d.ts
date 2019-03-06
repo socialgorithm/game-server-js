@@ -1,8 +1,11 @@
 import { GameOptions, Player } from "./constants";
+declare type OnStartGame = (players: Player[], options: GameOptions) => void;
+declare type OnPlayerMessage = (players: Player[], options: GameOptions) => void;
 export declare type GameBindings = {
-    onStartGame: (players: Player[], options: GameOptions) => void;
-    onPlayerMessage: (player: Player, payload: any) => void;
+    onStartGame: (fn: OnStartGame) => void;
+    onPlayerMessage: (fn: OnPlayerMessage) => void;
     sendPlayerMessage: (player: string, payload: any) => void;
     sendGameUpdate: (payload: any) => void;
     sendGameEnd: (payload: any) => void;
 };
+export {};
