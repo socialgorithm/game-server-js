@@ -5,7 +5,7 @@ import { Player, ServerOptions, SOCKET_MESSAGE } from "./constants";
 import { GameInputBindings } from "./GameServerBindings";
 
 export class GameServer {
-    private socket: SocketIO.Server;
+    public socket: SocketIO.Server;
 
     constructor(private inputBindings: GameInputBindings, private serverOptions?: ServerOptions) {
         const app = http.createServer();
@@ -15,6 +15,10 @@ export class GameServer {
         app.listen(port);
         // tslint:disable-next-line:no-console
         console.log(`Started Socialgorithm Game Server on ${port}`);
+
+        this.socket.on('connection', () => {
+            console.log('New connection');
+        });
 
         this.socket.on(SOCKET_MESSAGE.START_GAME, this.inputBindings.startGame);
         this.socket.on(SOCKET_MESSAGE.PLAYER_MESSAGE, this.inputBindings.onPlayerMessage);

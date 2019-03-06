@@ -36,6 +36,8 @@
     "typescript": "^3.3.3"
   },
   "devDependencies": {
-    "@types/socket.io": "^2.1.2"
+    "@types/node": "^11.9.0",
+    "@types/socket.io": "^2.1.2",
+    "@types/socket.io-client": "^1.4.32"
   }
 }
