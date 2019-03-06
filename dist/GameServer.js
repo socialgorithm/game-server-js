@@ -9,21 +9,19 @@ var GameServer = (function () {
         this.inputBindings = inputBindings;
         this.serverOptions = serverOptions;
         this.sendPlayerMessage = function (player, payload) {
-            _this.socket.send(constants_1.SOCKET_MESSAGE.PLAYER_MESSAGE, {
+            _this.socket.send(constants_1.SOCKET_MESSAGE.GAME__PLAYER, {
                 payload: payload,
                 player: player
             });
         };
         this.sendGameUpdate = function (payload) {
-            _this.socket.send(constants_1.SOCKET_MESSAGE.GAME_MESSAGE, {
-                payload: payload,
-                type: "UPDATE"
+            _this.socket.send(constants_1.SOCKET_MESSAGE.UPDATE, {
+                payload: payload
             });
         };
         this.sendGameEnd = function (payload) {
-            _this.socket.send(constants_1.SOCKET_MESSAGE.GAME_MESSAGE, {
-                payload: payload,
-                type: "END"
+            _this.socket.send(constants_1.SOCKET_MESSAGE.GAME_ENDED, {
+                payload: payload
             });
         };
         var app = http.createServer();
@@ -31,11 +29,8 @@ var GameServer = (function () {
         var port = serverOptions.port || 3333;
         app.listen(port);
         console.log("Started Socialgorithm Game Server on " + port);
-        this.socket.on('connection', function () {
-            console.log('New connection');
-        });
         this.socket.on(constants_1.SOCKET_MESSAGE.START_GAME, this.inputBindings.startGame);
-        this.socket.on(constants_1.SOCKET_MESSAGE.PLAYER_MESSAGE, this.inputBindings.onPlayerMessage);
+        this.socket.on(constants_1.SOCKET_MESSAGE.GAME__PLAYER, this.inputBindings.onPlayerMessage);
     }
     return GameServer;
 }());

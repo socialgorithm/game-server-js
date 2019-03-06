@@ -19,7 +19,8 @@ export declare type GameMessage = {
     payload: any;
 };
 export declare const SOCKET_MESSAGE: {
-    GAME_MESSAGE: string;
-    PLAYER_MESSAGE: string;
+    GAME_ENDED: string;
+    GAME__PLAYER: string;
     START_GAME: string;
+    UPDATE: string;
 };

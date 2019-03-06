@@ -1,8 +1,9 @@
 "use strict";
 exports.__esModule = true;
 exports.SOCKET_MESSAGE = {
-    GAME_MESSAGE: "gameMessage",
-    PLAYER_MESSAGE: "playerMessage",
-    START_GAME: "startGame"
+    GAME_ENDED: "GAME_ENDED",
+    GAME__PLAYER: "GAME__PLAYER",
+    START_GAME: "START_GAME",
+    UPDATE: "UPDATE"
 };
 //# sourceMappingURL=constants.js.map

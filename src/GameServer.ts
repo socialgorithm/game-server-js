@@ -16,32 +16,26 @@ export class GameServer {
         // tslint:disable-next-line:no-console
         console.log(`Started Socialgorithm Game Server on ${port}`);
 
-        this.socket.on('connection', () => {
-            console.log('New connection');
-        });
-
         this.socket.on(SOCKET_MESSAGE.START_GAME, this.inputBindings.startGame);
-        this.socket.on(SOCKET_MESSAGE.PLAYER_MESSAGE, this.inputBindings.onPlayerMessage);
+        this.socket.on(SOCKET_MESSAGE.GAME__PLAYER, this.inputBindings.onPlayerMessage);
     }
 
     public sendPlayerMessage = (player: Player, payload: any) => {
-        this.socket.send(SOCKET_MESSAGE.PLAYER_MESSAGE, {
+        this.socket.send(SOCKET_MESSAGE.GAME__PLAYER, {
             payload,
             player,
         });
     }
 
     public sendGameUpdate = (payload: any) => {
-        this.socket.send(SOCKET_MESSAGE.GAME_MESSAGE, {
+        this.socket.send(SOCKET_MESSAGE.UPDATE, {
             payload,
-            type: "UPDATE",
         });
     }
 
     public sendGameEnd = (payload: any) => {
-        this.socket.send(SOCKET_MESSAGE.GAME_MESSAGE, {
+        this.socket.send(SOCKET_MESSAGE.GAME_ENDED, {
             payload,
-            type: "END",
         });
     }
 }
