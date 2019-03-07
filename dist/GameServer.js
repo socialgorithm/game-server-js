@@ -49,7 +49,7 @@ var GameServer = (function () {
                 inputBindings.onStartGame(data);
             });
             socket.on(constants_1.SOCKET_MESSAGE.GAME__PLAYER, function (data) {
-                inputBindings.onPlayerMessage(data);
+                inputBindings.onPlayerMessage(data.player, data.payload);
             });
         });
     }

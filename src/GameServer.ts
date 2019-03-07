@@ -43,7 +43,7 @@ export class GameServer {
                 inputBindings.onStartGame(data);
             });
             socket.on(SOCKET_MESSAGE.GAME__PLAYER, (data: any) => {
-                inputBindings.onPlayerMessage(data);
+                inputBindings.onPlayerMessage(data.player, data.payload);
             });
         });
     }
