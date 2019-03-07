@@ -2,6 +2,7 @@
 exports.__esModule = true;
 var http = require("http");
 var io = require("socket.io");
+var debug = require("debug")("sg:gameServer");
 var constants_1 = require("./constants");
 var GameServer = (function () {
     function GameServer(onConnection, serverOptions) {
@@ -23,16 +24,20 @@ var GameServer = (function () {
                 payload: payload
             });
         }; };
+        this.unimplementedWarning = function (fn) { return function () {
+            console.log("Game Server Error: Please provide an implementation for " + fn);
+        }; };
         var app = http.createServer();
         this.io = io(app);
         var port = serverOptions.port || 3333;
         app.listen(port);
-        console.log("Started Socialgorithm Game Server on " + port);
+        debug("Started Socialgorithm Game Server on " + port);
         this.io.on("connection", function (socket) {
             var inputBindings = {
-                onPlayerMessage: _this.unimplementedWarning,
-                onStartGame: _this.unimplementedWarning
+                onPlayerMessage: _this.unimplementedWarning("onPlayerMessage"),
+                onStartGame: _this.unimplementedWarning("onStartGame")
             };
+            debug("New connection");
             var bindings = {
                 onPlayerMessage: function (onPlayerMessage) {
                     inputBindings.onPlayerMessage = onPlayerMessage;
@@ -53,9 +58,6 @@ var GameServer = (function () {
             });
         });
     }
-    GameServer.prototype.unimplementedWarning = function () {
-        console.log("Error: Please provide an implementation for startGame");
-    };
     return GameServer;
 }());
 exports.GameServer = GameServer;

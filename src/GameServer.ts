@@ -1,5 +1,7 @@
 import * as http from "http";
 import * as io from "socket.io";
+// tslint:disable-next-line:no-var-requires
+const debug = require("debug")("sg:gameServer");
 
 import { OnConnection, Player, ServerOptions, SOCKET_MESSAGE } from "./constants";
 import { GameBindings } from "./GameBindings";
@@ -14,14 +16,16 @@ export class GameServer {
 
         app.listen(port);
         // tslint:disable-next-line:no-console
-        console.log(`Started Socialgorithm Game Server on ${port}`);
+        debug(`Started Socialgorithm Game Server on ${port}`);
 
         this.io.on("connection", (socket: io.Socket) => {
             // we have the socket
             const inputBindings: any = {
-                onPlayerMessage: this.unimplementedWarning,
-                onStartGame: this.unimplementedWarning,
+                onPlayerMessage: this.unimplementedWarning("onPlayerMessage"),
+                onStartGame: this.unimplementedWarning("onStartGame"),
             };
+
+            debug("New connection");
 
             const bindings: GameBindings = {
                 // Game Server -> Game Implementation
@@ -67,8 +71,8 @@ export class GameServer {
         });
     }
 
-    private unimplementedWarning() {
+    private unimplementedWarning = (fn: string) => () => {
         // tslint:disable-next-line:no-console
-        console.log("Error: Please provide an implementation for startGame");
+        console.log(`Game Server Error: Please provide an implementation for ${fn}`);
     }
 }

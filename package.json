@@ -28,6 +28,7 @@
   },
   "homepage": "https://github.com/socialgorithm/game-server-js#readme",
   "dependencies": {
+    "debug": "^4.1.1",
     "socket.io": "^2.2.0",
     "ts-node": "^8.0.2",
     "tsconfig-paths": "^3.8.0",
