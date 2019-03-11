@@ -61,8 +61,4 @@ export class GameServer {
         socket.emit(GAME_SOCKET_MESSAGE.GAME_ENDED, gameEndedMessage);
     }
 
-    private unimplementedWarning = (fn: string) => () => {
-        // tslint:disable-next-line:no-console
-        console.log(`Game Server Error: Please provide an implementation for ${fn}`);
-    }
 }
