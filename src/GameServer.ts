@@ -1,74 +1,64 @@
 import * as http from "http";
 import * as io from "socket.io";
+import { GameOutputChannel, NewGameFn, Player } from "./Game";
+import { GameEndedMessage, GameInfoMessage, GameStartMessage, GameToPlayerMessage, GameUpdatedMessage, PlayerToGameMessage } from "./GameMessage";
+import { GAME_SOCKET_MESSAGE } from "./GameSocketMessage";
+import { ServerOptions } from "./ServerOptions";
 // tslint:disable-next-line:no-var-requires
 const debug = require("debug")("sg:gameServer");
-
-import { OnConnection, Player, ServerOptions, SOCKET_MESSAGE } from "./constants";
-import { GameBindings } from "./GameBindings";
 
 export class GameServer {
     public io: SocketIO.Server;
 
-    constructor(onConnection: OnConnection, private serverOptions?: ServerOptions) {
+    constructor(gameInfo: GameInfoMessage, newGameFn: NewGameFn, serverOptions?: ServerOptions) {
         const app = http.createServer();
         this.io = io(app);
-        const port = serverOptions.port || 3333;
+        const port = serverOptions.port || 5433;
 
         app.listen(port);
         // tslint:disable-next-line:no-console
+        console.log(`Started Socialgorithm Game Server on ${port}`);
         debug(`Started Socialgorithm Game Server on ${port}`);
 
         this.io.on("connection", (socket: io.Socket) => {
-            // we have the socket
-            const inputBindings: any = {
-                onPlayerMessage: this.unimplementedWarning("onPlayerMessage"),
-                onStartGame: this.unimplementedWarning("onStartGame"),
-            };
+            socket.emit(GAME_SOCKET_MESSAGE.GAME_INFO, gameInfo);
 
-            debug("New connection");
+            socket.on(GAME_SOCKET_MESSAGE.START_GAME, (gameStartMessage: GameStartMessage) => {
 
-            const bindings: GameBindings = {
-                // Game Server -> Game Implementation
-                onPlayerMessage: (onPlayerMessage: any) => {
-                    inputBindings.onPlayerMessage = onPlayerMessage;
-                },
-                onStartGame: (onStartGame: any) => {
-                    inputBindings.onStartGame = onStartGame;
-                },
-                // Implementation -> Game Server
-                sendGameEnd: this.sendGameEnd(socket),
-                sendGameUpdate: this.sendGameUpdate(socket),
-                sendPlayerMessage: this.sendPlayerMessage(socket),
-            };
+                const gameOutputChannel: GameOutputChannel = {
+                    sendGameEnd: this.sendGameEnded(socket),
+                    sendGameUpdate: this.sendGameUpdated(socket),
+                    sendPlayerMessage: this.sendPlayerMessage(socket),
+                };
 
-            onConnection(bindings);
+                const game = newGameFn(gameStartMessage, gameOutputChannel);
 
-            socket.on(SOCKET_MESSAGE.START_GAME, (data: any) => {
-                inputBindings.onStartGame(data);
+                socket.on(GAME_SOCKET_MESSAGE.GAME__PLAYER, (playerToGameMessage: PlayerToGameMessage) => {
+                    game.onPlayerMessage(playerToGameMessage.player, playerToGameMessage.payload);
+                });
             });
-            socket.on(SOCKET_MESSAGE.GAME__PLAYER, (data: any) => {
-                inputBindings.onPlayerMessage(data.player, data.payload);
-            });
+
         });
+
     }
 
     public sendPlayerMessage = (socket: io.Socket) => (player: Player, payload: any) => {
-        socket.emit(SOCKET_MESSAGE.GAME__PLAYER, {
+        const gameToPlayerMessage: GameToPlayerMessage = {
             payload,
             player,
-        });
+        };
+        socket.emit(GAME_SOCKET_MESSAGE.GAME__PLAYER, gameToPlayerMessage);
     }
 
-    public sendGameUpdate = (socket: io.Socket) => (payload: any) => {
-        socket.emit(SOCKET_MESSAGE.UPDATE, {
+    public sendGameUpdated = (socket: io.Socket) => (payload: any) => {
+        const gameUpdatedMessage: GameUpdatedMessage = {
             payload,
-        });
+        };
+        socket.emit(GAME_SOCKET_MESSAGE.GAME_UPDATED, gameUpdatedMessage);
     }
 
-    public sendGameEnd = (socket: io.Socket) => (payload: any) => {
-        socket.emit(SOCKET_MESSAGE.GAME_ENDED, {
-            payload,
-        });
+    public sendGameEnded = (socket: io.Socket) => (gameEndedMessage: GameEndedMessage) => {
+        socket.emit(GAME_SOCKET_MESSAGE.GAME_ENDED, gameEndedMessage);
     }
 
     private unimplementedWarning = (fn: string) => () => {

@@ -1,11 +1,12 @@
 import * as io from "socket.io";
-import { OnConnection, ServerOptions } from "./constants";
+import { NewGameFn } from "./Game";
+import { GameEndedMessage, GameInfoMessage } from "./GameMessage";
+import { ServerOptions } from "./ServerOptions";
 export declare class GameServer {
-    private serverOptions?;
     io: SocketIO.Server;
-    constructor(onConnection: OnConnection, serverOptions?: ServerOptions);
+    constructor(gameInfo: GameInfoMessage, newGameFn: NewGameFn, serverOptions?: ServerOptions);
     sendPlayerMessage: (socket: io.Socket) => (player: string, payload: any) => void;
-    sendGameUpdate: (socket: io.Socket) => (payload: any) => void;
-    sendGameEnd: (socket: io.Socket) => (payload: any) => void;
+    sendGameUpdated: (socket: io.Socket) => (payload: any) => void;
+    sendGameEnded: (socket: io.Socket) => (gameEndedMessage: GameEndedMessage) => void;
     private unimplementedWarning;
 }
