@@ -14,14 +14,16 @@ Start the game server and supply a new game function:
   new GameServer({ name: "My Game Name" }, newGameFunction, { port: 5433 });
 ```
 
-The new game function must accept game start parameters and can take an output channel on which to communicate with players/spectactors. It must return an implementation of the `Game` interface (i.e. must implement callback to listen for player communication).
+The new game function must accept game start parameters and can take an output channel on which to communicate with players/spectators. It must return an implementation of the `Game` interface (i.e. must implement callback to listen for player communication).
 
 ```
   newGameFunction(gameStartMessage: GameStartMessage, outputChannel: GameOutputChannel): Game {
-    debug("Started new Tic Tac Toe Game");
-    return new TicTacToeGame(gameStartMessage.players, outputChannel);
+    debug("Started new game");
+    return new MyGame(gameStartMessage.players, outputChannel);
   }
 ```
+
+In your game, you can then use `GameOutputChannel` to communicate with players or spectators (e.g. the Tournament Server). 
 
 ### Example
 
