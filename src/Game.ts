@@ -3,8 +3,8 @@ import { GameStartMessage } from "./GameMessage";
 
 export type NewGameFn = (gameStartMessage: GameStartMessage, gameOutputChannel: GameOutputChannel) => Game;
 
-export abstract class Game {
-  public abstract onPlayerMessage(player: Player, payload: any): void;
+export interface Game {
+  onPlayerMessage(player: Player, payload: any): void;
 }
 
 export type GameOutputChannel = {
