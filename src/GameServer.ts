@@ -1,9 +1,8 @@
+import { GAME_SOCKET_MESSAGE, GameMessage, Player } from "@socialgorithm/model";
 import * as http from "http";
-import { v4 as uuid } from 'uuid';
 import * as io from "socket.io";
-import { Game, GameOutputChannel, NewGameFn, Player } from "./Game";
-import { GameEndedMessage, GameInfoMessage, GameStartMessage, GameToPlayerMessage, GameUpdatedMessage, PlayerToGameMessage, GameStartedMessage } from './GameMessage';
-import { GAME_SOCKET_MESSAGE } from "./GameSocketMessage";
+import { v4 as uuid } from "uuid";
+import { Game, GameOutputChannel, NewGameFn } from "./Game";
 import { ServerOptions } from "./ServerOptions";
 // tslint:disable-next-line:no-var-requires
 const debug = require("debug")("sg:gameServer");
@@ -14,7 +13,7 @@ export class GameServer {
     private playerToGameID: Map<Player, string>;
     private playerToSocket: Map<Player, io.Socket>;
 
-    constructor(gameInfo: GameInfoMessage, private newGameFn: NewGameFn, serverOptions?: ServerOptions) {
+    constructor(gameInfo: GameMessage.GameInfoMessage, private newGameFn: NewGameFn, serverOptions?: ServerOptions) {
         const app = http.createServer();
         this.io = io(app);
         const port = serverOptions.port || 5433;
@@ -48,17 +47,17 @@ export class GameServer {
     }
 
     public sendGameUpdated = (socket: io.Socket, gameID: string) => (payload: any) => {
-        const gameUpdatedMessage: GameUpdatedMessage = {
+        const gameUpdatedMessage: GameMessage.GameUpdatedMessage = {
             payload,
         };
         socket.emit(GAME_SOCKET_MESSAGE.GAME_UPDATED,  { gameID, ...gameUpdatedMessage });
     }
 
-    public sendGameEnded = (socket: io.Socket, gameID: string) => (gameEndedMessage: GameEndedMessage) => {
+    public sendGameEnded = (socket: io.Socket, gameID: string) => (gameEndedMessage: GameMessage.GameEndedMessage) => {
         socket.emit(GAME_SOCKET_MESSAGE.GAME_ENDED, { gameID, ...gameEndedMessage });
     }
 
-    private startGame = (socket: io.Socket, gameStartMessage: GameStartMessage) => {
+    private startGame = (socket: io.Socket, gameStartMessage: GameMessage.GameStartMessage) => {
 
         // Convert player names to tokens - will be replaced when tournament-server uses secret tokens instead
         const playerGameTokens = this.generateGameTokens(gameStartMessage.players);

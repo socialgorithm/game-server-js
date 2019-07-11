@@ -1,12 +1,18 @@
+import { GameMessage } from "@socialgorithm/model";
 import * as io from "socket.io";
 import { NewGameFn } from "./Game";
-import { GameEndedMessage, GameInfoMessage } from "./GameMessage";
 import { ServerOptions } from "./ServerOptions";
 export declare class GameServer {
+    private newGameFn;
     io: SocketIO.Server;
-    constructor(gameInfo: GameInfoMessage, newGameFn: NewGameFn, serverOptions?: ServerOptions);
-    sendPlayerMessage: (socket: io.Socket) => (player: string, payload: any) => void;
-    sendGameUpdated: (socket: io.Socket) => (payload: any) => void;
-    sendGameEnded: (socket: io.Socket) => (gameEndedMessage: GameEndedMessage) => void;
-    private unimplementedWarning;
+    private games;
+    private playerToGameID;
+    private playerToSocket;
+    constructor(gameInfo: GameMessage.GameInfoMessage, newGameFn: NewGameFn, serverOptions?: ServerOptions);
+    sendGameMessageToPlayer: (player: string, payload: any) => void;
+    sendGameUpdated: (socket: io.Socket, gameID: string) => (payload: any) => void;
+    sendGameEnded: (socket: io.Socket, gameID: string) => (gameEndedMessage: GameMessage.GameEndedMessage) => void;
+    private startGame;
+    private sendPlayerMessageToGame;
+    private generateGameTokens;
 }

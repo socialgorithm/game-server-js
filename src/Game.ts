@@ -1,7 +1,6 @@
-import { Player } from ".";
-import { GameStartMessage } from "./GameMessage";
+import { GameMessage } from "@socialgorithm/model";
 
-export type NewGameFn = (gameStartMessage: GameStartMessage, gameOutputChannel: GameOutputChannel) => Game;
+export type NewGameFn = (gameStartMessage: GameMessage.GameStartMessage, gameOutputChannel: GameOutputChannel) => Game;
 
 export interface Game {
   onPlayerMessage(player: Player, payload: any): void;
