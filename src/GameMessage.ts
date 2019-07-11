@@ -15,6 +15,12 @@ export type GameStartedMessage = {
   },
 };
 
+export type GameServerHandoffMessage = {
+  gameServerAddress: string,
+  gameID: string,
+  token: string,
+};
+
 export type PlayerToGameMessage = {
   payload: any,
 };
