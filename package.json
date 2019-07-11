@@ -34,7 +34,8 @@
     "tsconfig-paths": "^3.8.0",
     "tslint": "^5.12.1",
     "typedoc": "^0.14.2",
-    "typescript": "^3.3.3"
+    "typescript": "^3.3.3",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "@types/node": "^11.9.0",

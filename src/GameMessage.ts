@@ -5,11 +5,17 @@ export type GameInfoMessage = {
 };
 
 export type GameStartMessage = {
+  gameID: string,
   players: Player[],
 };
 
+export type GameStartedMessage = {
+  playerGameTokens: {
+    [name: string]: string,
+  },
+};
+
 export type PlayerToGameMessage = {
-  player: Player,
   payload: any,
 };
 
