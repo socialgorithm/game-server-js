@@ -39,7 +39,7 @@ export class GameServer {
                 }
             }
 
-            socket.on(GAME_SOCKET_MESSAGE.CREATE_GAME, this.createGame);
+            socket.on(GAME_SOCKET_MESSAGE.CREATE_GAME, this.createGame(socket));
         });
     }
 
@@ -63,7 +63,7 @@ export class GameServer {
         socket.emit(GAME_SOCKET_MESSAGE.GAME_ENDED, { gameID, ...gameEndedMessage });
     }
 
-    private createGame = (socket: io.Socket, createGameMessage: GameMessage.CreateGameMessage) => {
+    private createGame = (socket: io.Socket) => (createGameMessage: GameMessage.CreateGameMessage) => {
 
         // Convert player names to tokens - will be replaced when tournament-server uses secret tokens instead
         const playerGameTokens = this.generateGameTokens(createGameMessage.players);

@@ -36,7 +36,7 @@ var GameServer = (function () {
         this.sendGameEnded = function (socket, gameID) { return function (gameEndedMessage) {
             socket.emit(model_1.GAME_SOCKET_MESSAGE.GAME_ENDED, __assign({ gameID: gameID }, gameEndedMessage));
         }; };
-        this.createGame = function (socket, createGameMessage) {
+        this.createGame = function (socket) { return function (createGameMessage) {
             var playerGameTokens = _this.generateGameTokens(createGameMessage.players);
             createGameMessage.players = createGameMessage.players.map(function (player) { return playerGameTokens.get(player); });
             var gameOutputChannel = {
@@ -52,7 +52,7 @@ var GameServer = (function () {
                 _this.playerToGameID.set(player, createGameMessage.gameID);
             });
             socket.emit(model_1.GAME_SOCKET_MESSAGE.GAME_CREATED, { playerGameTokens: playerGameTokens });
-        };
+        }; };
         this.sendPlayerMessageToGame = function (player) { return function (payload) {
             if (!_this.playerToGameID.has(player)) {
                 debug("Player " + player + " does not have an associated game, cannot send player's message");
@@ -91,7 +91,7 @@ var GameServer = (function () {
                     _this.games.get(playersGame).game.start();
                 }
             }
-            socket.on(model_1.GAME_SOCKET_MESSAGE.CREATE_GAME, _this.createGame);
+            socket.on(model_1.GAME_SOCKET_MESSAGE.CREATE_GAME, _this.createGame(socket));
         });
     }
     return GameServer;
