@@ -20,6 +20,9 @@ var GameServer = (function () {
     function GameServer(gameInfo, newGameFn, serverOptions) {
         var _this = this;
         this.newGameFn = newGameFn;
+        this.games = new Map();
+        this.playerToGameID = new Map();
+        this.playerToSocket = new Map();
         this.sendGameMessageToPlayer = function (player, payload) {
             if (!_this.playerToSocket.has(player)) {
                 debug("Socket not found for player " + player + ", cannot send game message");

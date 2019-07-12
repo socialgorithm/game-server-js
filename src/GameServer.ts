@@ -9,9 +9,9 @@ const debug = require("debug")("sg:gameServer");
 
 export class GameServer {
     public io: SocketIO.Server;
-    private games: Map<string, GameAndPlayers>;
-    private playerToGameID: Map<Player, string>;
-    private playerToSocket: Map<Player, io.Socket>;
+    private games: Map<string, GameAndPlayers> = new Map();
+    private playerToGameID: Map<Player, string> = new Map();
+    private playerToSocket: Map<Player, io.Socket> = new Map();
 
     constructor(gameInfo: GameMessage.GameInfoMessage, private newGameFn: NewGameFn, serverOptions?: ServerOptions) {
         const app = http.createServer();
