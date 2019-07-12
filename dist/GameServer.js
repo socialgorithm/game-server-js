@@ -40,6 +40,7 @@ var GameServer = (function () {
             socket.emit(model_1.GAME_SOCKET_MESSAGE.GAME_ENDED, __assign({ gameID: gameID }, gameEndedMessage));
         }; };
         this.createGame = function (socket) { return function (createGameMessage) {
+            debug("Received create game message %O", createGameMessage);
             var playerGameTokens = _this.generateGameTokens(createGameMessage.players);
             createGameMessage.players = createGameMessage.players.map(function (player) { return playerGameTokens.get(player); });
             var gameOutputChannel = {
