@@ -12,7 +12,8 @@ export declare class GameServer {
     sendGameMessageToPlayer: (player: string, payload: any) => void;
     sendGameUpdated: (socket: io.Socket, gameID: string) => (payload: any) => void;
     sendGameEnded: (socket: io.Socket, gameID: string) => (gameEndedMessage: GameMessage.GameEndedMessage) => void;
-    private startGame;
+    private createGame;
     private sendPlayerMessageToGame;
     private generateGameTokens;
+    private allPlayersReady;
 }

@@ -2,14 +2,14 @@ import { GAME_SOCKET_MESSAGE, GameMessage, Player } from "@socialgorithm/model";
 import * as http from "http";
 import * as io from "socket.io";
 import { v4 as uuid } from "uuid";
-import { Game, GameOutputChannel, NewGameFn } from "./Game";
+import { Game, GameAndPlayers, GameOutputChannel, NewGameFn } from "./Game";
 import { ServerOptions } from "./ServerOptions";
 // tslint:disable-next-line:no-var-requires
 const debug = require("debug")("sg:gameServer");
 
 export class GameServer {
     public io: SocketIO.Server;
-    private games: Map<string, Game>;
+    private games: Map<string, GameAndPlayers>;
     private playerToGameID: Map<Player, string>;
     private playerToSocket: Map<Player, io.Socket>;
 
@@ -31,9 +31,15 @@ export class GameServer {
                 const token = socket.handshake.query.token;
                 this.playerToSocket.set(token, socket);
                 socket.on(GAME_SOCKET_MESSAGE.GAME__PLAYER, this.sendPlayerMessageToGame(token));
+
+                // If all players in a game are connected, start the game
+                const playersGame = this.playerToGameID.get(token);
+                if (playersGame && this.allPlayersReady(playersGame)) {
+                    this.games.get(playersGame).game.start();
+                }
             }
 
-            socket.on(GAME_SOCKET_MESSAGE.START_GAME, this.startGame);
+            socket.on(GAME_SOCKET_MESSAGE.CREATE_GAME, this.createGame);
         });
     }
 
@@ -57,27 +63,30 @@ export class GameServer {
         socket.emit(GAME_SOCKET_MESSAGE.GAME_ENDED, { gameID, ...gameEndedMessage });
     }
 
-    private startGame = (socket: io.Socket, gameStartMessage: GameMessage.GameStartMessage) => {
+    private createGame = (socket: io.Socket, createGameMessage: GameMessage.CreateGameMessage) => {
 
         // Convert player names to tokens - will be replaced when tournament-server uses secret tokens instead
-        const playerGameTokens = this.generateGameTokens(gameStartMessage.players);
-        gameStartMessage.players = gameStartMessage.players.map(player => playerGameTokens.get(player));
+        const playerGameTokens = this.generateGameTokens(createGameMessage.players);
+        createGameMessage.players = createGameMessage.players.map(player => playerGameTokens.get(player));
 
         const gameOutputChannel: GameOutputChannel = {
-            sendGameEnd: this.sendGameEnded(socket, gameStartMessage.gameID),
-            sendGameUpdate: this.sendGameUpdated(socket, gameStartMessage.gameID),
+            sendGameEnd: this.sendGameEnded(socket, createGameMessage.gameID),
+            sendGameUpdate: this.sendGameUpdated(socket, createGameMessage.gameID),
             sendPlayerMessage: this.sendGameMessageToPlayer,
         };
 
         this.games.set(
-            gameStartMessage.gameID,
-            this.newGameFn(gameStartMessage, gameOutputChannel),
+            createGameMessage.gameID,
+            {
+                game: this.newGameFn(createGameMessage, gameOutputChannel),
+                players: createGameMessage.players,
+            },
         );
-        gameStartMessage.players.forEach(player => {
-            this.playerToGameID.set(player, gameStartMessage.gameID);
+        createGameMessage.players.forEach(player => {
+            this.playerToGameID.set(player, createGameMessage.gameID);
         });
 
-        socket.emit(GAME_SOCKET_MESSAGE.GAME_STARTED, { playerGameTokens });
+        socket.emit(GAME_SOCKET_MESSAGE.GAME_CREATED, { playerGameTokens });
     }
 
     private sendPlayerMessageToGame = (player: Player) => (payload: any) => {
@@ -92,9 +101,18 @@ export class GameServer {
             debug(`Game ${gameId} not found, cannot send player ${player}'s message`);
         }
 
-        this.games.get(gameId).onPlayerMessage(player, payload);
+        this.games.get(gameId).game.onPlayerMessage(player, payload);
     }
 
     private generateGameTokens = (players: Player[]) =>
         new Map(players.map(player => [player, uuid()] as [string, string]))
+
+    private allPlayersReady = (gameID: string) => {
+        const requiredPlayers = this.games.get(gameID).players;
+        const currentPlayers: Player[] = Object.entries(this.playerToGameID)
+            .filter(entry => entry[1] === gameID)
+            .map(entry => entry[0]);
+
+        return requiredPlayers.every(requiredPlayer => currentPlayers.includes(requiredPlayer));
+    }
 }
