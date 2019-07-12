@@ -68,7 +68,7 @@ export class GameServer {
         // Convert player names to tokens - will be replaced when tournament-server uses secret tokens instead
         debug("Received create game message %O", createGameMessage);
         const playerGameTokens = this.generateGameTokens(createGameMessage.players);
-        createGameMessage.players = createGameMessage.players.map(player => playerGameTokens.get(player));
+        createGameMessage.players = createGameMessage.players.map(player => playerGameTokens[player]);
 
         const gameOutputChannel: GameOutputChannel = {
             sendGameEnd: this.sendGameEnded(socket, createGameMessage.gameID),
@@ -106,7 +106,9 @@ export class GameServer {
     }
 
     private generateGameTokens = (players: Player[]) => {
-        return new Map(players.map(player => [player, uuid()] as [string, string]));
+        const gameTokens: { [key: string]: string } = {};
+        players.forEach(player => { gameTokens[player] = uuid(); });
+        return gameTokens;
     }
 
     private allPlayersReady = (gameID: string) => {

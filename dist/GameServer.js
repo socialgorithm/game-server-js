@@ -42,7 +42,7 @@ var GameServer = (function () {
         this.createGame = function (socket) { return function (createGameMessage) {
             debug("Received create game message %O", createGameMessage);
             var playerGameTokens = _this.generateGameTokens(createGameMessage.players);
-            createGameMessage.players = createGameMessage.players.map(function (player) { return playerGameTokens.get(player); });
+            createGameMessage.players = createGameMessage.players.map(function (player) { return playerGameTokens[player]; });
             var gameOutputChannel = {
                 sendGameEnd: _this.sendGameEnded(socket, createGameMessage.gameID),
                 sendGameUpdate: _this.sendGameUpdated(socket, createGameMessage.gameID),
@@ -69,7 +69,9 @@ var GameServer = (function () {
             _this.games.get(gameId).game.onPlayerMessage(player, payload);
         }; };
         this.generateGameTokens = function (players) {
-            return new Map(players.map(function (player) { return [player, uuid_1.v4()]; }));
+            var gameTokens = {};
+            players.forEach(function (player) { gameTokens[player] = uuid_1.v4(); });
+            return gameTokens;
         };
         this.allPlayersReady = function (gameID) {
             var requiredPlayers = _this.games.get(gameID).players;
