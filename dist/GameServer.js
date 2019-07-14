@@ -19,8 +19,8 @@ var GameServer = (function () {
             }
             _this.playerToSocket.get(player).emit(new model_1.Events.GameToPlayerEvent({ payload: payload }));
         };
-        this.sendMatchEnded = function (socket) { return function (matchEndedMessage) {
-            socket.emit(new model_1.Events.MatchEndedEvent(matchEndedMessage));
+        this.sendMatchEnded = function (socket) { return function () {
+            socket.emit(new model_1.Events.MatchEndedEvent());
         }; };
         this.sendGameEnded = function (socket) { return function (gameEndedMessage) {
             socket.emit(new model_1.Events.GameEndedEvent(gameEndedMessage));

@@ -55,8 +55,8 @@ export class GameServer {
         this.playerToSocket.get(player).emit(new Events.GameToPlayerEvent({ payload }));
     }
 
-    public sendMatchEnded = (socket: Socket) => (matchEndedMessage: Messages.MatchEndedMessage) => {
-        socket.emit(new Events.MatchEndedEvent(matchEndedMessage));
+    public sendMatchEnded = (socket: Socket) => () => {
+        socket.emit(new Events.MatchEndedEvent());
     }
 
     public sendGameEnded = (socket: Socket) => (gameEndedMessage: Messages.GameEndedMessage) => {

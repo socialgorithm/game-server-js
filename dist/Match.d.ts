@@ -8,5 +8,5 @@ export interface IMatch {
 export declare type MatchOutputChannel = {
     sendMessageToPlayer: (player: string, message: any) => void;
     sendGameEnded: (message: Messages.GameEndedMessage) => void;
-    sendMatchEnded: (message: Messages.MatchEndedMessage) => void;
+    sendMatchEnded: () => void;
 };
