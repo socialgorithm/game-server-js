@@ -1,9 +1,9 @@
 "use strict";
 exports.__esModule = true;
+var Events_1 = require("@socialgorithm/model/dist/Events");
 var http = require("http");
 var io = require("socket.io");
 var uuid_1 = require("uuid");
-var Events_1 = require("@socialgorithm/model/dist/Events");
 var debug = require("debug")("sg:gameServer");
 var GameServer = (function () {
     function GameServer(gameInfo, newMatchFn, serverOptions) {
