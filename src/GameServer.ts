@@ -52,7 +52,7 @@ export class GameServer {
             return;
         }
 
-        this.playerToSocket.get(player).emit(new Events.GameToPlayerEvent(payload));
+        this.playerToSocket.get(player).emit(new Events.GameToPlayerEvent({ payload }));
     }
 
     public sendMatchEnded = (socket: Socket) => (matchEndedMessage: Messages.MatchEndedMessage) => {
@@ -96,7 +96,7 @@ export class GameServer {
             debug(`Match ${matchId} not found, cannot send player ${player}'s message`);
         }
 
-        this.matches.get(matchId).onMessageFromPlayer(player, message);
+        this.matches.get(matchId).onMessageFromPlayer(player, message.payload);
     }
 
     private generateMatchTokens = (players: Player[]) => {

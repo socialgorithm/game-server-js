@@ -3,10 +3,10 @@ export declare type NewMatchFn = (createMatchMessage: Messages.CreateMatchMessag
 export interface IMatch {
     players: Player[];
     start(): void;
-    onMessageFromPlayer(player: Player, payload: Messages.PlayerToGameMessage): void;
+    onMessageFromPlayer(player: Player, message: any): void;
 }
 export declare type MatchOutputChannel = {
-    sendMessageToPlayer: (player: string, payload: Messages.GameToPlayerMessage) => void;
+    sendMessageToPlayer: (player: string, message: any) => void;
     sendGameEnded: (message: Messages.GameEndedMessage) => void;
     sendMatchEnded: (message: Messages.MatchEndedMessage) => void;
 };

@@ -17,7 +17,7 @@ var GameServer = (function () {
                 debug("Socket not found for player " + player + ", cannot send game message");
                 return;
             }
-            _this.playerToSocket.get(player).emit(new model_1.Events.GameToPlayerEvent(payload));
+            _this.playerToSocket.get(player).emit(new model_1.Events.GameToPlayerEvent({ payload: payload }));
         };
         this.sendMatchEnded = function (socket) { return function (matchEndedMessage) {
             socket.emit(new model_1.Events.MatchEndedEvent(matchEndedMessage));
@@ -50,7 +50,7 @@ var GameServer = (function () {
             if (!_this.matches.has(matchId)) {
                 debug("Match " + matchId + " not found, cannot send player " + player + "'s message");
             }
-            _this.matches.get(matchId).onMessageFromPlayer(player, message);
+            _this.matches.get(matchId).onMessageFromPlayer(player, message.payload);
         }; };
         this.generateMatchTokens = function (players) {
             var gameTokens = {};
