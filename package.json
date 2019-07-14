@@ -29,7 +29,7 @@
   },
   "homepage": "https://github.com/socialgorithm/game-server-js#readme",
   "dependencies": {
-    "@socialgorithm/model": "0.0.19",
+    "@socialgorithm/model": "0.0.20",
     "debug": "^4.1.1",
     "socket.io": "^2.2.0",
     "ts-node": "^8.0.2",

@@ -1,4 +1,4 @@
-import { Events, Handlers, Messages, Player, Socket } from "@socialgorithm/model";
+import { Events, Handlers, Messages, Player } from "@socialgorithm/model";
 import { EventName } from "@socialgorithm/model/dist/Events";
 import * as http from "http";
 import * as io from "socket.io";
