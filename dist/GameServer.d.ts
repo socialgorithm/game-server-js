@@ -1,5 +1,5 @@
-/// <reference types="socket.io" />
-import { Messages, Socket } from "@socialgorithm/model";
+import { Messages } from "@socialgorithm/model";
+import * as io from "socket.io";
 import { NewMatchFn } from "./Match";
 import { ServerOptions } from "./ServerOptions";
 export declare class GameServer {
@@ -10,8 +10,8 @@ export declare class GameServer {
     private playerToSocket;
     constructor(gameInfo: Messages.GameInfoMessage, newMatchFn: NewMatchFn, serverOptions?: ServerOptions);
     sendGameMessageToPlayer: (player: string, payload: any) => void;
-    sendMatchEnded: (socket: Socket) => () => void;
-    sendGameEnded: (socket: Socket) => (gameEndedMessage: import("@socialgorithm/model").Game) => void;
+    sendMatchEnded: (socket: io.Socket) => () => void;
+    sendGameEnded: (socket: io.Socket) => (gameEndedMessage: import("@socialgorithm/model").Game) => void;
     private createMatch;
     private sendPlayerMessageToGame;
     private generateMatchTokens;

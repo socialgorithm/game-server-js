@@ -1,9 +1,9 @@
 "use strict";
 exports.__esModule = true;
-var model_1 = require("@socialgorithm/model");
 var http = require("http");
 var io = require("socket.io");
 var uuid_1 = require("uuid");
+var Events_1 = require("@socialgorithm/model/dist/Events");
 var debug = require("debug")("sg:gameServer");
 var GameServer = (function () {
     function GameServer(gameInfo, newMatchFn, serverOptions) {
@@ -17,13 +17,13 @@ var GameServer = (function () {
                 debug("Socket not found for player " + player + ", cannot send game message");
                 return;
             }
-            _this.playerToSocket.get(player).emit(new model_1.Events.GameToPlayerEvent({ payload: payload }));
+            _this.playerToSocket.get(player).emit(Events_1.EventName.Game__Player, { payload: payload });
         };
         this.sendMatchEnded = function (socket) { return function () {
-            socket.emit(new model_1.Events.MatchEndedEvent());
+            socket.emit(Events_1.EventName.MatchEnded, null);
         }; };
         this.sendGameEnded = function (socket) { return function (gameEndedMessage) {
-            socket.emit(new model_1.Events.GameEndedEvent(gameEndedMessage));
+            socket.emit(Events_1.EventName.GameEnded, gameEndedMessage);
         }; };
         this.createMatch = function (socket) { return function (message) {
             debug("Received create match message %O", message);
@@ -39,7 +39,7 @@ var GameServer = (function () {
             message.players.forEach(function (player) {
                 _this.playerToMatchID.set(player, matchID);
             });
-            socket.emit(new model_1.Events.MatchCreatedEvent({ playerTokens: playerTokens }));
+            socket.emit(Events_1.EventName.MatchCreated, { playerTokens: playerTokens });
         }; };
         this.sendPlayerMessageToGame = function (player) { return function (message) {
             if (!_this.playerToMatchID.has(player)) {
@@ -70,20 +70,19 @@ var GameServer = (function () {
         app.listen(port);
         console.log("Started Socialgorithm Game Server on " + port);
         debug("Started Socialgorithm Game Server on " + port);
-        this.io.on("connection", function (rawSocket) {
-            var socket = new model_1.Socket(rawSocket);
-            socket.emit(new model_1.Events.GameInfoEvent(gameInfo));
-            if (socket.socket.handshake.query && socket.socket.handshake.query.token) {
-                var token = socket.socket.handshake.query.token;
+        this.io.on("connection", function (socket) {
+            socket.emit(Events_1.EventName.GameInfo, gameInfo);
+            if (socket.handshake.query && socket.handshake.query.token) {
+                var token = socket.handshake.query.token;
                 _this.playerToSocket.set(token, socket);
-                socket.addHandler(new model_1.Handlers.PlayerToGameEventHandler(_this.sendPlayerMessageToGame(token)));
+                socket.on(Events_1.EventName.Game__Player, _this.sendPlayerMessageToGame(token));
                 var playersMatch = _this.playerToMatchID.get(token);
                 if (playersMatch && _this.allPlayersReady(playersMatch)) {
                     _this.matches.get(playersMatch).start();
                 }
             }
             else {
-                socket.addHandler(new model_1.Handlers.CreateMatchEventHandler(_this.createMatch(socket)));
+                socket.on(Events_1.EventName.Game__Player, _this.createMatch(socket));
             }
         });
     }

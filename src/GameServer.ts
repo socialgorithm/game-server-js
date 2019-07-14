@@ -1,4 +1,5 @@
 import { Events, Handlers, Messages, Player, Socket } from "@socialgorithm/model";
+import { EventName } from "@socialgorithm/model/dist/Events";
 import * as http from "http";
 import * as io from "socket.io";
 import { v4 as uuid } from "uuid";
@@ -11,7 +12,7 @@ export class GameServer {
     public io: SocketIO.Server;
     private matches: Map<string, IMatch> = new Map();
     private playerToMatchID: Map<Player, string> = new Map();
-    private playerToSocket: Map<Player, Socket> = new Map();
+    private playerToSocket: Map<Player, io.Socket> = new Map();
 
     constructor(gameInfo: Messages.GameInfoMessage, private newMatchFn: NewMatchFn, serverOptions?: ServerOptions) {
         const app = http.createServer();
@@ -23,16 +24,15 @@ export class GameServer {
         console.log(`Started Socialgorithm Game Server on ${port}`);
         debug(`Started Socialgorithm Game Server on ${port}`);
 
-        this.io.on("connection", (rawSocket: io.Socket) => {
+        this.io.on("connection", (socket: io.Socket) => {
             // Use a wrapper for type-safety
-            const socket = new Socket(rawSocket);
-            socket.emit(new Events.GameInfoEvent(gameInfo));
+            socket.emit(EventName.GameInfo, gameInfo);
 
-            if (socket.socket.handshake.query && socket.socket.handshake.query.token) {
+            if (socket.handshake.query && socket.handshake.query.token) {
                 // This is a uabc/player connection
-                const token = socket.socket.handshake.query.token;
+                const token = socket.handshake.query.token;
                 this.playerToSocket.set(token, socket);
-                socket.addHandler(new Handlers.PlayerToGameEventHandler(this.sendPlayerMessageToGame(token)));
+                socket.on(EventName.Game__Player, this.sendPlayerMessageToGame(token));
 
                 // If all players in a match are connected, start the match
                 const playersMatch = this.playerToMatchID.get(token);
@@ -41,7 +41,7 @@ export class GameServer {
                 }
             } else {
                 // Otherwise, it's a tournament server connection
-                socket.addHandler(new Handlers.CreateMatchEventHandler(this.createMatch(socket)));
+                socket.on(EventName.Game__Player, this.createMatch(socket));
             }
         });
     }
@@ -52,18 +52,18 @@ export class GameServer {
             return;
         }
 
-        this.playerToSocket.get(player).emit(new Events.GameToPlayerEvent({ payload }));
+        this.playerToSocket.get(player).emit(EventName.Game__Player, { payload });
     }
 
-    public sendMatchEnded = (socket: Socket) => () => {
-        socket.emit(new Events.MatchEndedEvent());
+    public sendMatchEnded = (socket: io.Socket) => () => {
+        socket.emit(EventName.MatchEnded, null);
     }
 
-    public sendGameEnded = (socket: Socket) => (gameEndedMessage: Messages.GameEndedMessage) => {
-        socket.emit(new Events.GameEndedEvent(gameEndedMessage));
+    public sendGameEnded = (socket: io.Socket) => (gameEndedMessage: Messages.GameEndedMessage) => {
+        socket.emit(EventName.GameEnded, gameEndedMessage);
     }
 
-    private createMatch = (socket: Socket) => (message: Messages.CreateMatchMessage) => {
+    private createMatch = (socket: io.Socket) => (message: Messages.CreateMatchMessage) => {
         debug("Received create match message %O", message);
         const playerTokens = this.generateMatchTokens(message.players);
         message.players = message.players.map(player => playerTokens[player]);
@@ -81,7 +81,7 @@ export class GameServer {
             this.playerToMatchID.set(player, matchID);
         });
 
-        socket.emit(new Events.MatchCreatedEvent({ playerTokens }));
+        socket.emit(EventName.MatchCreated, { playerTokens });
     }
 
     private sendPlayerMessageToGame = (player: Player) => (message: Messages.PlayerToGameMessage) => {
