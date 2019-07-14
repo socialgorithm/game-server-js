@@ -1,5 +1,5 @@
-import { GAME_SOCKET_MESSAGE, GameMessage, Player } from "@socialgorithm/model";
-import { Game, GameOutputChannel, NewGameFn } from "./Game";
+import { Messages, Player } from "@socialgorithm/model";
 import { GameServer } from "./GameServer";
+import { IMatch, MatchOutputChannel, NewMatchFn } from "./Match";
 export default GameServer;
-export { GAME_SOCKET_MESSAGE, Game, GameMessage, GameOutputChannel, NewGameFn, Player, };
+export { Messages, IMatch, MatchOutputChannel, NewMatchFn, Player, };

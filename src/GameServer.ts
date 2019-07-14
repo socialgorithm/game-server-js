@@ -1,19 +1,19 @@
-import { GAME_SOCKET_MESSAGE, GameMessage, Player } from "@socialgorithm/model";
+import { Events, Handlers, Messages, Player, Socket } from "@socialgorithm/model";
 import * as http from "http";
 import * as io from "socket.io";
 import { v4 as uuid } from "uuid";
-import { Game, GameAndPlayers, GameOutputChannel, NewGameFn } from "./Game";
+import { IMatch, MatchOutputChannel, NewMatchFn } from "./Match";
 import { ServerOptions } from "./ServerOptions";
 // tslint:disable-next-line:no-var-requires
 const debug = require("debug")("sg:gameServer");
 
 export class GameServer {
     public io: SocketIO.Server;
-    private games: Map<string, GameAndPlayers> = new Map();
-    private playerToGameID: Map<Player, string> = new Map();
-    private playerToSocket: Map<Player, io.Socket> = new Map();
+    private matches: Map<string, IMatch> = new Map();
+    private playerToMatchID: Map<Player, string> = new Map();
+    private playerToSocket: Map<Player, Socket> = new Map();
 
-    constructor(gameInfo: GameMessage.GameInfoMessage, private newGameFn: NewGameFn, serverOptions?: ServerOptions) {
+    constructor(gameInfo: Messages.GameInfoMessage, private newMatchFn: NewMatchFn, serverOptions?: ServerOptions) {
         const app = http.createServer();
         this.io = io(app);
         const port = serverOptions.port || 5433;
@@ -23,23 +23,26 @@ export class GameServer {
         console.log(`Started Socialgorithm Game Server on ${port}`);
         debug(`Started Socialgorithm Game Server on ${port}`);
 
-        this.io.on("connection", (socket: io.Socket) => {
-            socket.emit(GAME_SOCKET_MESSAGE.GAME_INFO, gameInfo);
+        this.io.on("connection", (rawSocket: io.Socket) => {
+            // Use a wrapper for type-safety
+            const socket = new Socket(rawSocket);
+            socket.emit(new Events.GameInfoEvent(gameInfo));
 
-            if (socket.handshake.query && socket.handshake.query.token) {
+            if (socket.socket.handshake.query && socket.socket.handshake.query.token) {
                 // This is a uabc/player connection
-                const token = socket.handshake.query.token;
+                const token = socket.socket.handshake.query.token;
                 this.playerToSocket.set(token, socket);
-                socket.on(GAME_SOCKET_MESSAGE.GAME__PLAYER, this.sendPlayerMessageToGame(token));
+                socket.addHandler(new Handlers.PlayerToGameEventHandler(this.sendPlayerMessageToGame(token)));
 
-                // If all players in a game are connected, start the game
-                const playersGame = this.playerToGameID.get(token);
-                if (playersGame && this.allPlayersReady(playersGame)) {
-                    this.games.get(playersGame).game.start();
+                // If all players in a match are connected, start the match
+                const playersMatch = this.playerToMatchID.get(token);
+                if (playersMatch && this.allPlayersReady(playersMatch)) {
+                    this.matches.get(playersMatch).start();
                 }
+            } else {
+                // Otherwise, it's a tournament server connection
+                socket.addHandler(new Handlers.CreateMatchEventHandler(this.createMatch(socket)));
             }
-
-            socket.on(GAME_SOCKET_MESSAGE.CREATE_GAME, this.createGame(socket));
         });
     }
 
@@ -49,72 +52,63 @@ export class GameServer {
             return;
         }
 
-        this.playerToSocket.get(player).emit(GAME_SOCKET_MESSAGE.GAME__PLAYER, payload);
+        this.playerToSocket.get(player).emit(new Events.GameToPlayerEvent(payload));
     }
 
-    public sendGameUpdated = (socket: io.Socket, gameID: string) => (payload: any) => {
-        const gameUpdatedMessage: GameMessage.GameUpdatedMessage = {
-            payload,
-        };
-        socket.emit(GAME_SOCKET_MESSAGE.GAME_UPDATED,  { gameID, ...gameUpdatedMessage });
+    public sendMatchEnded = (socket: Socket) => (matchEndedMessage: Messages.MatchEndedMessage) => {
+        socket.emit(new Events.MatchEndedEvent(matchEndedMessage));
     }
 
-    public sendGameEnded = (socket: io.Socket, gameID: string) => (gameEndedMessage: GameMessage.GameEndedMessage) => {
-        socket.emit(GAME_SOCKET_MESSAGE.GAME_ENDED, { gameID, ...gameEndedMessage });
+    public sendGameEnded = (socket: Socket) => (gameEndedMessage: Messages.GameEndedMessage) => {
+        socket.emit(new Events.GameEndedEvent(gameEndedMessage));
     }
 
-    private createGame = (socket: io.Socket) => (createGameMessage: GameMessage.CreateGameMessage) => {
+    private createMatch = (socket: Socket) => (message: Messages.CreateMatchMessage) => {
+        debug("Received create match message %O", message);
+        const playerTokens = this.generateMatchTokens(message.players);
+        message.players = message.players.map(player => playerTokens[player]);
 
-        // Convert player names to tokens - will be replaced when tournament-server uses secret tokens instead
-        debug("Received create game message %O", createGameMessage);
-        const playerGameTokens = this.generateGameTokens(createGameMessage.players);
-        createGameMessage.players = createGameMessage.players.map(player => playerGameTokens[player]);
-
-        const gameOutputChannel: GameOutputChannel = {
-            sendGameEnd: this.sendGameEnded(socket, createGameMessage.gameID),
-            sendGameUpdate: this.sendGameUpdated(socket, createGameMessage.gameID),
-            sendPlayerMessage: this.sendGameMessageToPlayer,
+        const matchID = uuid();
+        const matchOutputChannel: MatchOutputChannel = {
+            sendGameEnded: this.sendGameEnded(socket),
+            sendMatchEnded: this.sendMatchEnded(socket),
+            sendMessageToPlayer: this.sendGameMessageToPlayer,
         };
 
-        this.games.set(
-            createGameMessage.gameID,
-            {
-                game: this.newGameFn(createGameMessage, gameOutputChannel),
-                players: createGameMessage.players,
-            },
-        );
-        createGameMessage.players.forEach(player => {
-            this.playerToGameID.set(player, createGameMessage.gameID);
+        this.matches.set(matchID, this.newMatchFn(message, matchOutputChannel));
+
+        message.players.forEach(player => {
+            this.playerToMatchID.set(player, matchID);
         });
 
-        socket.emit(GAME_SOCKET_MESSAGE.GAME_CREATED, { playerGameTokens });
+        socket.emit(new Events.MatchCreatedEvent({ playerTokens }));
     }
 
-    private sendPlayerMessageToGame = (player: Player) => (payload: any) => {
+    private sendPlayerMessageToGame = (player: Player) => (message: Messages.PlayerToGameMessage) => {
         // Find the game that the player is in, send message
-        if (!this.playerToGameID.has(player)) {
+        if (!this.playerToMatchID.has(player)) {
             debug(`Player ${player} does not have an associated game, cannot send player's message`);
             return;
         }
-        const gameId = this.playerToGameID.get(player);
+        const matchId = this.playerToMatchID.get(player);
 
-        if (!this.games.has(gameId)) {
-            debug(`Game ${gameId} not found, cannot send player ${player}'s message`);
+        if (!this.matches.has(matchId)) {
+            debug(`Match ${matchId} not found, cannot send player ${player}'s message`);
         }
 
-        this.games.get(gameId).game.onPlayerMessage(player, payload);
+        this.matches.get(matchId).onMessageFromPlayer(player, message);
     }
 
-    private generateGameTokens = (players: Player[]) => {
+    private generateMatchTokens = (players: Player[]) => {
         const gameTokens: { [key: string]: string } = {};
         players.forEach(player => { gameTokens[player] = uuid(); });
         return gameTokens;
     }
 
-    private allPlayersReady = (gameID: string) => {
-        const requiredPlayers = this.games.get(gameID).players;
-        const currentPlayers: Player[] = Object.entries(this.playerToGameID)
-            .filter(entry => entry[1] === gameID)
+    private allPlayersReady = (matchID: string) => {
+        const requiredPlayers = this.matches.get(matchID).players;
+        const currentPlayers: Player[] = Object.entries(this.playerToMatchID)
+            .filter(entry => entry[1] === matchID)
             .map(entry => entry[0]);
 
         return requiredPlayers.every(requiredPlayer => currentPlayers.includes(requiredPlayer));
