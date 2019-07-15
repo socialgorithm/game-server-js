@@ -58,10 +58,10 @@ var GameServer = (function () {
             return gameTokens;
         };
         this.allPlayersReady = function (matchID) {
-            debug("Checking all players ready for " + matchID);
             var requiredPlayers = _this.matches.get(matchID).players;
+            debug("%s requires players: %O", matchID, requiredPlayers);
             return requiredPlayers.every(function (requiredPlayer) {
-                return _this.playerToMatchID.has(requiredPlayer) && _this.playerToMatchID.get(requiredPlayer) === matchID;
+                return _this.playerToSocket.has(requiredPlayer) && _this.playerToSocket.get(requiredPlayer).connected;
             });
         };
         var app = http.createServer();
@@ -79,6 +79,7 @@ var GameServer = (function () {
                 socket.on(Events_1.EventName.Game__Player, _this.sendPlayerMessageToGame(token));
                 var playersMatch = _this.playerToMatchID.get(token);
                 if (playersMatch && _this.allPlayersReady(playersMatch)) {
+                    debug("All players ready in " + playersMatch);
                     _this.matches.get(playersMatch).start();
                 }
             }

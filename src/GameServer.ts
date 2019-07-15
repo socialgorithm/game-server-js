@@ -38,6 +38,7 @@ export class GameServer {
                 // If all players in a match are connected, start the match
                 const playersMatch = this.playerToMatchID.get(token);
                 if (playersMatch && this.allPlayersReady(playersMatch)) {
+                    debug(`All players ready in ${playersMatch}`);
                     this.matches.get(playersMatch).start();
                 }
             } else {
@@ -107,10 +108,10 @@ export class GameServer {
     }
 
     private allPlayersReady = (matchID: string) => {
-        debug(`Checking all players ready for ${matchID}`);
         const requiredPlayers = this.matches.get(matchID).players;
+        debug("%s requires players: %O", matchID, requiredPlayers);
         return requiredPlayers.every(requiredPlayer => {
-            return this.playerToMatchID.has(requiredPlayer) && this.playerToMatchID.get(requiredPlayer) === matchID;
+            return this.playerToSocket.has(requiredPlayer) && this.playerToSocket.get(requiredPlayer).connected;
         });
     }
 }
