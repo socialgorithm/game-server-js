@@ -1,12 +1,12 @@
-import { Events, Handlers, Messages, Player } from "@socialgorithm/model";
-import { EventName } from "@socialgorithm/model/dist/Events";
+// tslint:disable-next-line:no-var-requires
+const debug = require("debug")("sg:gameServer");
+
+import { EventName, Messages, Player } from "@socialgorithm/model";
 import * as http from "http";
 import * as io from "socket.io";
 import { v4 as uuid } from "uuid";
 import { IMatch, MatchOutputChannel, NewMatchFn } from "./Match";
 import { ServerOptions } from "./ServerOptions";
-// tslint:disable-next-line:no-var-requires
-const debug = require("debug")("sg:gameServer");
 
 export class GameServer {
     public io: SocketIO.Server;
