@@ -29,6 +29,7 @@ export class GameServer {
             socket.emit(EventName.GameInfo, gameInfo);
 
             if (socket.handshake.query && socket.handshake.query.token) {
+                debug("New player connection %O", socket.handshake.query);
                 // This is a uabc/player connection
                 const token = socket.handshake.query.token;
                 this.playerToSocket.set(token, socket);
@@ -106,11 +107,15 @@ export class GameServer {
     }
 
     private allPlayersReady = (matchID: string) => {
+        debug(`Checking all players ready for ${matchID}`);
         const requiredPlayers = this.matches.get(matchID).players;
         const currentPlayers: Player[] = Object.entries(this.playerToMatchID)
             .filter(entry => entry[1] === matchID)
             .map(entry => entry[0]);
 
-        return requiredPlayers.every(requiredPlayer => currentPlayers.includes(requiredPlayer));
+        return requiredPlayers.every(requiredPlayer => {
+            debug(`Required player for ${matchID} exists: ${currentPlayers.includes(requiredPlayer)}`);
+            currentPlayers.includes(requiredPlayer);
+        });
     }
 }

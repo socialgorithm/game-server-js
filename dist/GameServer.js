@@ -58,11 +58,15 @@ var GameServer = (function () {
             return gameTokens;
         };
         this.allPlayersReady = function (matchID) {
+            debug("Checking all players ready for " + matchID);
             var requiredPlayers = _this.matches.get(matchID).players;
             var currentPlayers = Object.entries(_this.playerToMatchID)
                 .filter(function (entry) { return entry[1] === matchID; })
                 .map(function (entry) { return entry[0]; });
-            return requiredPlayers.every(function (requiredPlayer) { return currentPlayers.includes(requiredPlayer); });
+            return requiredPlayers.every(function (requiredPlayer) {
+                debug("Required player for " + matchID + " exists: " + currentPlayers.includes(requiredPlayer));
+                currentPlayers.includes(requiredPlayer);
+            });
         };
         var app = http.createServer();
         this.io = io(app);
@@ -73,6 +77,7 @@ var GameServer = (function () {
         this.io.on("connection", function (socket) {
             socket.emit(Events_1.EventName.GameInfo, gameInfo);
             if (socket.handshake.query && socket.handshake.query.token) {
+                debug("New player connection %O", socket.handshake.query);
                 var token = socket.handshake.query.token;
                 _this.playerToSocket.set(token, socket);
                 socket.on(Events_1.EventName.Game__Player, _this.sendPlayerMessageToGame(token));
