@@ -8,10 +8,60 @@ var debug = require("debug")("sg:gameServer");
 var GameServer = (function () {
     function GameServer(gameInfo, newMatchFn, serverOptions) {
         var _this = this;
+        this.gameInfo = gameInfo;
         this.newMatchFn = newMatchFn;
         this.matches = new Map();
         this.playerToMatchID = new Map();
         this.playerToSocket = new Map();
+        this.onTournamentServerConnected = function (tournamentServerMatchSocket) {
+            tournamentServerMatchSocket.emit(Events_1.EventName.GameInfo, _this.gameInfo);
+            tournamentServerMatchSocket.on(Events_1.EventName.CreateMatch, _this.createMatch(tournamentServerMatchSocket));
+        };
+        this.onPlayerConnected = function (playerSocket) {
+            debug("New player connection %O", playerSocket.handshake.query);
+            var token = playerSocket.handshake.query.token;
+            _this.playerToSocket.set(token, playerSocket);
+            playerSocket.on(Events_1.EventName.Game__Player, _this.sendPlayerMessageToGame(token));
+            var matchThePlayerIsIn = _this.playerToMatchID.get(token);
+            if (matchThePlayerIsIn && _this.allPlayersReady(matchThePlayerIsIn)) {
+                debug("All players ready in " + matchThePlayerIsIn);
+                _this.matches.get(matchThePlayerIsIn).start();
+            }
+            playerSocket.on("disconnect", function () {
+                _this.onPlayerDisconnected(token);
+            });
+        };
+        this.onPlayerDisconnected = function (token) {
+            debug("Player " + token + " disconnected, removing");
+            _this.playerToSocket["delete"](token);
+        };
+        this.createMatch = function (tournamentServerMatchSocket) { return function (message) {
+            debug("Received create match message %O", message);
+            var playerTokens = _this.generateMatchTokens(message.players);
+            message.players = message.players.map(function (player) { return playerTokens[player]; });
+            var matchID = uuid_1.v4();
+            var matchOutputChannel = {
+                sendGameEnded: _this.sendGameEnded(tournamentServerMatchSocket),
+                sendMatchEnded: _this.removeMatchAndSendMatchEnded(matchID, tournamentServerMatchSocket),
+                sendMessageToPlayer: _this.sendGameMessageToPlayer
+            };
+            _this.matches.set(matchID, _this.newMatchFn(message, matchOutputChannel));
+            message.players.forEach(function (player) {
+                _this.playerToMatchID.set(player, matchID);
+            });
+            tournamentServerMatchSocket.emit(Events_1.EventName.MatchCreated, { playerTokens: playerTokens });
+        }; };
+        this.removeMatchAndSendMatchEnded = function (matchID, tournamentServerMatchSocket) { return function () {
+            debug("Match " + matchID + " ended, removing and sending MatchEnded");
+            if (_this.matches.has(matchID)) {
+                _this.matches.get(matchID).players.forEach(function (player) { return _this.playerToMatchID["delete"](player); });
+                _this.matches["delete"](matchID);
+            }
+            tournamentServerMatchSocket.emit(Events_1.EventName.MatchEnded, null);
+        }; };
+        this.sendGameEnded = function (tournamentServerSocket) { return function (gameEndedMessage) {
+            tournamentServerSocket.emit(Events_1.EventName.GameEnded, gameEndedMessage);
+        }; };
         this.sendGameMessageToPlayer = function (player, payload) {
             if (!_this.playerToSocket.has(player)) {
                 debug("Socket not found for player " + player + ", cannot send game message");
@@ -19,28 +69,6 @@ var GameServer = (function () {
             }
             _this.playerToSocket.get(player).emit(Events_1.EventName.Game__Player, { payload: payload });
         };
-        this.sendMatchEnded = function (socket) { return function () {
-            socket.emit(Events_1.EventName.MatchEnded, null);
-        }; };
-        this.sendGameEnded = function (socket) { return function (gameEndedMessage) {
-            socket.emit(Events_1.EventName.GameEnded, gameEndedMessage);
-        }; };
-        this.createMatch = function (socket) { return function (message) {
-            debug("Received create match message %O", message);
-            var playerTokens = _this.generateMatchTokens(message.players);
-            message.players = message.players.map(function (player) { return playerTokens[player]; });
-            var matchID = uuid_1.v4();
-            var matchOutputChannel = {
-                sendGameEnded: _this.sendGameEnded(socket),
-                sendMatchEnded: _this.sendMatchEnded(socket),
-                sendMessageToPlayer: _this.sendGameMessageToPlayer
-            };
-            _this.matches.set(matchID, _this.newMatchFn(message, matchOutputChannel));
-            message.players.forEach(function (player) {
-                _this.playerToMatchID.set(player, matchID);
-            });
-            socket.emit(Events_1.EventName.MatchCreated, { playerTokens: playerTokens });
-        }; };
         this.sendPlayerMessageToGame = function (player) { return function (message) {
             if (!_this.playerToMatchID.has(player)) {
                 debug("Player " + player + " does not have an associated game, cannot send player's message");
@@ -71,20 +99,11 @@ var GameServer = (function () {
         console.log("Started Socialgorithm Game Server on " + port);
         debug("Started Socialgorithm Game Server on " + port);
         this.io.on("connection", function (socket) {
-            socket.emit(Events_1.EventName.GameInfo, gameInfo);
             if (socket.handshake.query && socket.handshake.query.token) {
-                debug("New player connection %O", socket.handshake.query);
-                var token = socket.handshake.query.token;
-                _this.playerToSocket.set(token, socket);
-                socket.on(Events_1.EventName.Game__Player, _this.sendPlayerMessageToGame(token));
-                var matchThePlayerIsIn = _this.playerToMatchID.get(token);
-                if (matchThePlayerIsIn && _this.allPlayersReady(matchThePlayerIsIn)) {
-                    debug("All players ready in " + matchThePlayerIsIn);
-                    _this.matches.get(matchThePlayerIsIn).start();
-                }
+                _this.onPlayerConnected(socket);
             }
             else {
-                socket.on(Events_1.EventName.CreateMatch, _this.createMatch(socket));
+                _this.onTournamentServerConnected(socket);
             }
         });
     }

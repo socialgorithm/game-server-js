@@ -14,7 +14,7 @@ export class GameServer {
     private playerToMatchID: Map<Player, string> = new Map();
     private playerToSocket: Map<Player, io.Socket> = new Map();
 
-    constructor(gameInfo: Messages.GameInfoMessage, private newMatchFn: NewMatchFn, serverOptions?: ServerOptions) {
+    constructor(private gameInfo: Messages.GameInfoMessage, private newMatchFn: NewMatchFn, serverOptions?: ServerOptions) {
         const app = http.createServer();
         this.io = io(app);
         const port = serverOptions.port || 5433;
@@ -25,65 +25,85 @@ export class GameServer {
         debug(`Started Socialgorithm Game Server on ${port}`);
 
         this.io.on("connection", (socket: io.Socket) => {
-            // Use a wrapper for type-safety
-            socket.emit(EventName.GameInfo, gameInfo);
-
             if (socket.handshake.query && socket.handshake.query.token) {
-                debug("New player connection %O", socket.handshake.query);
-                // This is a uabc/player connection
-                const token = socket.handshake.query.token;
-                this.playerToSocket.set(token, socket);
-                socket.on(EventName.Game__Player, this.sendPlayerMessageToGame(token));
-
-                // If all players in a match are connected, start the match
-                const matchThePlayerIsIn = this.playerToMatchID.get(token);
-                if (matchThePlayerIsIn && this.allPlayersReady(matchThePlayerIsIn)) {
-                    debug(`All players ready in ${matchThePlayerIsIn}`);
-                    this.matches.get(matchThePlayerIsIn).start();
-                }
+                this.onPlayerConnected(socket);
             } else {
-                // Otherwise, it's a tournament server connection
-                socket.on(EventName.CreateMatch, this.createMatch(socket));
+                this.onTournamentServerConnected(socket);
             }
         });
     }
 
-    public sendGameMessageToPlayer = (player: Player, payload: any) => {
-        if (!this.playerToSocket.has(player)) {
-            debug(`Socket not found for player ${player}, cannot send game message`);
-            return;
+    private onTournamentServerConnected = (tournamentServerMatchSocket: io.Socket) => {
+        tournamentServerMatchSocket.emit(EventName.GameInfo, this.gameInfo);
+        tournamentServerMatchSocket.on(EventName.CreateMatch, this.createMatch(tournamentServerMatchSocket));
+    }
+
+    private onPlayerConnected = (playerSocket: io.Socket) => {
+        debug("New player connection %O", playerSocket.handshake.query);
+        // This is a uabc/player connection
+        const token = playerSocket.handshake.query.token;
+        this.playerToSocket.set(token, playerSocket);
+        playerSocket.on(EventName.Game__Player, this.sendPlayerMessageToGame(token));
+
+        // If all players in a match are connected, start the match
+        const matchThePlayerIsIn = this.playerToMatchID.get(token);
+        if (matchThePlayerIsIn && this.allPlayersReady(matchThePlayerIsIn)) {
+            debug(`All players ready in ${matchThePlayerIsIn}`);
+            this.matches.get(matchThePlayerIsIn).start();
         }
 
-        this.playerToSocket.get(player).emit(EventName.Game__Player, { payload });
+        playerSocket.on("disconnect", () => {
+            this.onPlayerDisconnected(token);
+        });
     }
 
-    public sendMatchEnded = (socket: io.Socket) => () => {
-        socket.emit(EventName.MatchEnded, null);
+    private onPlayerDisconnected = (token: string) => {
+        debug(`Player ${token} disconnected, removing`);
+        this.playerToSocket.delete(token);
     }
 
-    public sendGameEnded = (socket: io.Socket) => (gameEndedMessage: Messages.GameEndedMessage) => {
-        socket.emit(EventName.GameEnded, gameEndedMessage);
-    }
-
-    private createMatch = (socket: io.Socket) => (message: Messages.CreateMatchMessage) => {
+    private createMatch = (tournamentServerMatchSocket: io.Socket) => (message: Messages.CreateMatchMessage) => {
         debug("Received create match message %O", message);
         const playerTokens = this.generateMatchTokens(message.players);
         message.players = message.players.map(player => playerTokens[player]);
 
         const matchID = uuid();
         const matchOutputChannel: MatchOutputChannel = {
-            sendGameEnded: this.sendGameEnded(socket),
-            sendMatchEnded: this.sendMatchEnded(socket),
+            sendGameEnded: this.sendGameEnded(tournamentServerMatchSocket),
+            sendMatchEnded: this.removeMatchAndSendMatchEnded(matchID, tournamentServerMatchSocket),
             sendMessageToPlayer: this.sendGameMessageToPlayer,
         };
 
         this.matches.set(matchID, this.newMatchFn(message, matchOutputChannel));
-
         message.players.forEach(player => {
             this.playerToMatchID.set(player, matchID);
         });
 
-        socket.emit(EventName.MatchCreated, { playerTokens });
+        tournamentServerMatchSocket.emit(EventName.MatchCreated, { playerTokens });
+    }
+
+    private removeMatchAndSendMatchEnded = (matchID: string, tournamentServerMatchSocket: io.Socket) => () => {
+        debug(`Match ${matchID} ended, removing and sending MatchEnded`);
+
+        if (this.matches.has(matchID)) {
+            this.matches.get(matchID).players.forEach(player => this.playerToMatchID.delete(player));
+            this.matches.delete(matchID);
+        }
+
+        tournamentServerMatchSocket.emit(EventName.MatchEnded, null);
+    }
+
+    private sendGameEnded = (tournamentServerSocket: io.Socket) => (gameEndedMessage: Messages.GameEndedMessage) => {
+        tournamentServerSocket.emit(EventName.GameEnded, gameEndedMessage);
+    }
+
+    private sendGameMessageToPlayer = (player: Player, payload: any) => {
+        if (!this.playerToSocket.has(player)) {
+            debug(`Socket not found for player ${player}, cannot send game message`);
+            return;
+        }
+
+        this.playerToSocket.get(player).emit(EventName.Game__Player, { payload });
     }
 
     private sendPlayerMessageToGame = (player: Player) => (message: Messages.PlayerToGameMessage) => {
