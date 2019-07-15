@@ -82,7 +82,7 @@ var GameServer = (function () {
                 }
             }
             else {
-                socket.on(Events_1.EventName.Game__Player, _this.createMatch(socket));
+                socket.on(Events_1.EventName.CreateMatch, _this.createMatch(socket));
             }
         });
     }

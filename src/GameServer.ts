@@ -41,7 +41,7 @@ export class GameServer {
                 }
             } else {
                 // Otherwise, it's a tournament server connection
-                socket.on(EventName.Game__Player, this.createMatch(socket));
+                socket.on(EventName.CreateMatch, this.createMatch(socket));
             }
         });
     }
