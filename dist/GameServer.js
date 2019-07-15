@@ -64,7 +64,8 @@ var GameServer = (function () {
                 .filter(function (entry) { return entry[1] === matchID; })
                 .map(function (entry) { return entry[0]; });
             return requiredPlayers.every(function (requiredPlayer) {
-                debug("Required player for " + matchID + " exists: " + currentPlayers.includes(requiredPlayer));
+                debug("Required player " + requiredPlayer + " for " + matchID + " exists: " + currentPlayers.includes(requiredPlayer));
+                debug("Current players: %O", currentPlayers);
                 currentPlayers.includes(requiredPlayer);
             });
         };

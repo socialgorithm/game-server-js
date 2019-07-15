@@ -114,7 +114,8 @@ export class GameServer {
             .map(entry => entry[0]);
 
         return requiredPlayers.every(requiredPlayer => {
-            debug(`Required player for ${matchID} exists: ${currentPlayers.includes(requiredPlayer)}`);
+            debug(`Required player ${requiredPlayer} for ${matchID} exists: ${currentPlayers.includes(requiredPlayer)}`);
+            debug("Current players: %O", currentPlayers);
             currentPlayers.includes(requiredPlayer);
         });
     }
