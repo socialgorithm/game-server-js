@@ -1,6 +1,6 @@
 {
   "name": "@socialgorithm/game-server",
-  "version": "1.1.8",
+  "version": "1.1.9",
   "description": "JS Game Server library",
   "main": "dist/index.js",
   "scripts": {
