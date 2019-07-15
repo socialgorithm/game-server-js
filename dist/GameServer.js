@@ -77,10 +77,10 @@ var GameServer = (function () {
                 var token = socket.handshake.query.token;
                 _this.playerToSocket.set(token, socket);
                 socket.on(Events_1.EventName.Game__Player, _this.sendPlayerMessageToGame(token));
-                var playersMatch = _this.playerToMatchID.get(token);
-                if (playersMatch && _this.allPlayersReady(playersMatch)) {
-                    debug("All players ready in " + playersMatch);
-                    _this.matches.get(playersMatch).start();
+                var matchThePlayerIsIn = _this.playerToMatchID.get(token);
+                if (matchThePlayerIsIn && _this.allPlayersReady(matchThePlayerIsIn)) {
+                    debug("All players ready in " + matchThePlayerIsIn);
+                    _this.matches.get(matchThePlayerIsIn).start();
                 }
             }
             else {

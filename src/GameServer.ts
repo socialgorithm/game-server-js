@@ -36,10 +36,10 @@ export class GameServer {
                 socket.on(EventName.Game__Player, this.sendPlayerMessageToGame(token));
 
                 // If all players in a match are connected, start the match
-                const playersMatch = this.playerToMatchID.get(token);
-                if (playersMatch && this.allPlayersReady(playersMatch)) {
-                    debug(`All players ready in ${playersMatch}`);
-                    this.matches.get(playersMatch).start();
+                const matchThePlayerIsIn = this.playerToMatchID.get(token);
+                if (matchThePlayerIsIn && this.allPlayersReady(matchThePlayerIsIn)) {
+                    debug(`All players ready in ${matchThePlayerIsIn}`);
+                    this.matches.get(matchThePlayerIsIn).start();
                 }
             } else {
                 // Otherwise, it's a tournament server connection
