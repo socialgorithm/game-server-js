@@ -60,13 +60,8 @@ var GameServer = (function () {
         this.allPlayersReady = function (matchID) {
             debug("Checking all players ready for " + matchID);
             var requiredPlayers = _this.matches.get(matchID).players;
-            var currentPlayers = Object.entries(_this.playerToMatchID)
-                .filter(function (entry) { return entry[1] === matchID; })
-                .map(function (entry) { return entry[0]; });
             return requiredPlayers.every(function (requiredPlayer) {
-                debug("Required player " + requiredPlayer + " for " + matchID + " exists: " + currentPlayers.includes(requiredPlayer));
-                debug("Current players: %O", currentPlayers);
-                currentPlayers.includes(requiredPlayer);
+                return _this.playerToMatchID.has(requiredPlayer) && _this.playerToMatchID.get(requiredPlayer) === matchID;
             });
         };
         var app = http.createServer();

@@ -109,14 +109,8 @@ export class GameServer {
     private allPlayersReady = (matchID: string) => {
         debug(`Checking all players ready for ${matchID}`);
         const requiredPlayers = this.matches.get(matchID).players;
-        const currentPlayers: Player[] = Object.entries(this.playerToMatchID)
-            .filter(entry => entry[1] === matchID)
-            .map(entry => entry[0]);
-
         return requiredPlayers.every(requiredPlayer => {
-            debug(`Required player ${requiredPlayer} for ${matchID} exists: ${currentPlayers.includes(requiredPlayer)}`);
-            debug("Current players: %O", currentPlayers);
-            currentPlayers.includes(requiredPlayer);
+            return this.playerToMatchID.has(requiredPlayer) && this.playerToMatchID.get(requiredPlayer) === matchID;
         });
     }
 }
