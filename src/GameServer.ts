@@ -46,10 +46,16 @@ export class GameServer {
         playerSocket.on(EventName.Game__Player, this.sendPlayerMessageToGame(token));
 
         // If all players in a match are connected, start the match
-        const matchThePlayerIsIn = this.playerToMatchID.get(token);
-        if (matchThePlayerIsIn && this.allPlayersReady(matchThePlayerIsIn)) {
-            debug(`All players ready in ${matchThePlayerIsIn}`);
-            this.matches.get(matchThePlayerIsIn).start();
+        const matchIDThePlayerIsIn = this.playerToMatchID.get(token);
+        if (matchIDThePlayerIsIn && this.matches.has(matchIDThePlayerIsIn)) {
+            const matchThePlayerIsIn = this.matches.get(matchIDThePlayerIsIn);
+            matchThePlayerIsIn.onPlayerConnected(token);
+            if (this.allPlayersReady(matchThePlayerIsIn.players)) {
+               debug(`All players ready in ${matchIDThePlayerIsIn} - starting match`);
+               this.matches.get(matchIDThePlayerIsIn).start();
+            }
+        } else {
+            debug(`Player ${token} is connecting to match ${matchIDThePlayerIsIn}, which doesn't exist`);
         }
 
         playerSocket.on("disconnect", () => {
@@ -57,8 +63,20 @@ export class GameServer {
         });
     }
 
+    private allPlayersReady = (requiredPlayers: Player[]) => {
+        debug("Required players: %O", requiredPlayers);
+        return requiredPlayers.every(requiredPlayer => {
+            return this.playerToSocket.has(requiredPlayer) && this.playerToSocket.get(requiredPlayer).connected;
+        });
+    }
+
     private onPlayerDisconnected = (token: string) => {
         debug(`Player ${token} disconnected, removing`);
+        const matchIDThePlayerIsIn = this.playerToMatchID.get(token);
+        if (matchIDThePlayerIsIn && this.matches.has(matchIDThePlayerIsIn)) {
+            const matchThePlayerIsIn = this.matches.get(matchIDThePlayerIsIn);
+            matchThePlayerIsIn.onPlayerDisconnected(token);
+        }
         this.playerToSocket.delete(token);
     }
 
@@ -82,7 +100,7 @@ export class GameServer {
         tournamentServerMatchSocket.emit(EventName.MatchCreated, { playerTokens });
     }
 
-    private removeMatchAndSendMatchEnded = (matchID: string, tournamentServerMatchSocket: io.Socket) => () => {
+    private removeMatchAndSendMatchEnded = (matchID: string, tournamentServerMatchSocket: io.Socket) => (matchEndedMessage: Messages.MatchEndedMessage) => {
         debug(`Match ${matchID} ended, removing and sending MatchEnded`);
 
         if (this.matches.has(matchID)) {
@@ -90,7 +108,7 @@ export class GameServer {
             this.matches.delete(matchID);
         }
 
-        tournamentServerMatchSocket.emit(EventName.MatchEnded, null);
+        tournamentServerMatchSocket.emit(EventName.MatchEnded, matchEndedMessage);
     }
 
     private sendGameEnded = (tournamentServerSocket: io.Socket) => (gameEndedMessage: Messages.GameEndedMessage) => {
@@ -127,11 +145,4 @@ export class GameServer {
         return gameTokens;
     }
 
-    private allPlayersReady = (matchID: string) => {
-        const requiredPlayers = this.matches.get(matchID).players;
-        debug("%s requires players: %O", matchID, requiredPlayers);
-        return requiredPlayers.every(requiredPlayer => {
-            return this.playerToSocket.has(requiredPlayer) && this.playerToSocket.get(requiredPlayer).connected;
-        });
-    }
 }

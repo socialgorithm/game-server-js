@@ -22,17 +22,35 @@ var GameServer = (function () {
             var token = playerSocket.handshake.query.token;
             _this.playerToSocket.set(token, playerSocket);
             playerSocket.on(model_1.EventName.Game__Player, _this.sendPlayerMessageToGame(token));
-            var matchThePlayerIsIn = _this.playerToMatchID.get(token);
-            if (matchThePlayerIsIn && _this.allPlayersReady(matchThePlayerIsIn)) {
-                debug("All players ready in " + matchThePlayerIsIn);
-                _this.matches.get(matchThePlayerIsIn).start();
+            var matchIDThePlayerIsIn = _this.playerToMatchID.get(token);
+            if (matchIDThePlayerIsIn && _this.matches.has(matchIDThePlayerIsIn)) {
+                var matchThePlayerIsIn = _this.matches.get(matchIDThePlayerIsIn);
+                matchThePlayerIsIn.onPlayerConnected(token);
+                if (_this.allPlayersReady(matchThePlayerIsIn.players)) {
+                    debug("All players ready in " + matchIDThePlayerIsIn + " - starting match");
+                    _this.matches.get(matchIDThePlayerIsIn).start();
+                }
+            }
+            else {
+                debug("Player " + token + " is connecting to match " + matchIDThePlayerIsIn + ", which doesn't exist");
             }
             playerSocket.on("disconnect", function () {
                 _this.onPlayerDisconnected(token);
             });
         };
+        this.allPlayersReady = function (requiredPlayers) {
+            debug("Required players: %O", requiredPlayers);
+            return requiredPlayers.every(function (requiredPlayer) {
+                return _this.playerToSocket.has(requiredPlayer) && _this.playerToSocket.get(requiredPlayer).connected;
+            });
+        };
         this.onPlayerDisconnected = function (token) {
             debug("Player " + token + " disconnected, removing");
+            var matchIDThePlayerIsIn = _this.playerToMatchID.get(token);
+            if (matchIDThePlayerIsIn && _this.matches.has(matchIDThePlayerIsIn)) {
+                var matchThePlayerIsIn = _this.matches.get(matchIDThePlayerIsIn);
+                matchThePlayerIsIn.onPlayerDisconnected(token);
+            }
             _this.playerToSocket["delete"](token);
         };
         this.createMatch = function (tournamentServerMatchSocket) { return function (message) {
@@ -51,13 +69,13 @@ var GameServer = (function () {
             });
             tournamentServerMatchSocket.emit(model_1.EventName.MatchCreated, { playerTokens: playerTokens });
         }; };
-        this.removeMatchAndSendMatchEnded = function (matchID, tournamentServerMatchSocket) { return function () {
+        this.removeMatchAndSendMatchEnded = function (matchID, tournamentServerMatchSocket) { return function (matchEndedMessage) {
             debug("Match " + matchID + " ended, removing and sending MatchEnded");
             if (_this.matches.has(matchID)) {
                 _this.matches.get(matchID).players.forEach(function (player) { return _this.playerToMatchID["delete"](player); });
                 _this.matches["delete"](matchID);
             }
-            tournamentServerMatchSocket.emit(model_1.EventName.MatchEnded, null);
+            tournamentServerMatchSocket.emit(model_1.EventName.MatchEnded, matchEndedMessage);
         }; };
         this.sendGameEnded = function (tournamentServerSocket) { return function (gameEndedMessage) {
             tournamentServerSocket.emit(model_1.EventName.GameEnded, gameEndedMessage);
@@ -84,13 +102,6 @@ var GameServer = (function () {
             var gameTokens = {};
             players.forEach(function (player) { gameTokens[player] = uuid_1.v4(); });
             return gameTokens;
-        };
-        this.allPlayersReady = function (matchID) {
-            var requiredPlayers = _this.matches.get(matchID).players;
-            debug("%s requires players: %O", matchID, requiredPlayers);
-            return requiredPlayers.every(function (requiredPlayer) {
-                return _this.playerToSocket.has(requiredPlayer) && _this.playerToSocket.get(requiredPlayer).connected;
-            });
         };
         var app = http.createServer();
         this.io = io(app);

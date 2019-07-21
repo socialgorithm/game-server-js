@@ -12,6 +12,7 @@ export declare class GameServer {
     constructor(gameInfo: Messages.GameInfoMessage, newMatchFn: NewMatchFn, serverOptions?: ServerOptions);
     private onTournamentServerConnected;
     private onPlayerConnected;
+    private allPlayersReady;
     private onPlayerDisconnected;
     private createMatch;
     private removeMatchAndSendMatchEnded;
@@ -19,5 +20,4 @@ export declare class GameServer {
     private sendGameMessageToPlayer;
     private sendPlayerMessageToGame;
     private generateMatchTokens;
-    private allPlayersReady;
 }

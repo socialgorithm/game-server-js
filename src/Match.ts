@@ -4,6 +4,8 @@ export type NewMatchFn = (createMatchMessage: Messages.CreateMatchMessage, match
 
 export interface IMatch {
   players: Player[];
+  onPlayerConnected(player: Player): void;
+  onPlayerDisconnected(player: Player): void;
   start(): void;
   onMessageFromPlayer(player: Player, message: any): void;
 }
@@ -11,5 +13,5 @@ export interface IMatch {
 export type MatchOutputChannel = {
   sendMessageToPlayer: (player: string, message: any) => void;
   sendGameEnded: (message: Messages.GameEndedMessage) => void;
-  sendMatchEnded: () => void;
+  sendMatchEnded: (message?: Messages.MatchEndedMessage) => void;
 };
