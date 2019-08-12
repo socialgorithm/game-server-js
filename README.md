@@ -8,22 +8,26 @@ Install the dependency:
 
 `npm install @socialgorithm/game-server`
 
-Start the game server and supply a new game function:
+Start the game server and supply a new match function:
 
 ```
-  new GameServer({ name: "My Game Name" }, newGameFunction, { port: 5433 });
+  new GameServer({ name: "My Game Name" }, newMatchFunction, { port: 5433 });
 ```
 
-The new game function must accept game start parameters and can take an output channel on which to communicate with players/spectators. It must return an implementation of the `Game` interface (i.e. must implement callback to listen for player communication).
+The new match function:
+
+* Must accept `MatchOptions`
+* May accept an output channel on which to communicate with players/spectators. 
+* Must return an implementation of the `Match` interface (i.e. must implement callback to listen for player communication).
 
 ```
-  newGameFunction(gameStartMessage: GameStartMessage, outputChannel: GameOutputChannel): Game {
-    debug("Started new game");
-    return new MyGame(gameStartMessage.players, outputChannel);
+  newMatchFunction(createMatchMessage: CreateMatchMessage, matchOutputChannel: MatchOutputChannel): Match {
+    debug("Started new match");
+    return new MyMatch(matchStartMessage.players, matchOutputChannel);
   }
 ```
 
-In your game, you can then use `GameOutputChannel` to communicate with players or spectators (e.g. the Tournament Server). 
+In your game, you can then use `MatchOutputChannel` to communicate with players or spectators (e.g. the Tournament Server). 
 
 ### Example
 
