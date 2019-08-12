@@ -2,6 +2,8 @@
 
 Creates a socket server (default port 5433) that serves games. To use this server, you provide functions that will be called on game or player actions, and call functions to communicate with players or to broadcast game state to spectators.
 
+If you have no idea what any of this means, start at our [homepage](https://socialgorithm.org/) or [tournament documentation](https://socialgorithm.org/docs)
+
 ## Integrating
 
 Install the dependency:
