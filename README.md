@@ -15,7 +15,12 @@ Start the game server and supply a new match function:
 ```
   new GameServer({ name: "My Game Name" }, newMatchFunction, { port: 5433 });
 ```
+  }
 
+  private newMatchFunction(createMatchMessage: Messages.CreateMatchMessage, outputChannel: MatchOutputChannel) {
+    return new TicTacToeMatch(createMatchMessage.options, createMatchMessage.players, outputChannel);
+  }
+}
 The new match function:
 
 * Must accept `MatchOptions`
@@ -23,9 +28,9 @@ The new match function:
 * Must return an implementation of the `Match` interface (i.e. must implement callback to listen for player communication).
 
 ```
-  newMatchFunction(createMatchMessage: CreateMatchMessage, matchOutputChannel: MatchOutputChannel): Match {
+  newMatchFunction(createMatchMessage: Messages.CreateMatchMessage, outputChannel: MatchOutputChannel) {
     debug("Started new match");
-    return new MyMatch(matchStartMessage.players, matchOutputChannel);
+    return new MyMatch(createMatchMessage.options, createMatchMessage.players, outputChannel);
   }
 ```
 
@@ -33,7 +38,7 @@ In your game, you can then use `MatchOutputChannel` to communicate with players 
 
 ### Example
 
-See [tic-tac-toe](https://github.com/socialgorithm/tic-tac-toe) for an example of integration.
+See [tic-tac-toe-game-server](https://github.com/socialgorithm/tic-tac-toe-game-server) for an example of integration.
 
 ## Contributing
 
