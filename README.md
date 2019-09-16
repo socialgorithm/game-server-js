@@ -15,17 +15,11 @@ Start the game server and supply a new match function:
 ```
   new GameServer({ name: "My Game Name" }, newMatchFunction, { port: 5433 });
 ```
-  }
-
-  private newMatchFunction(createMatchMessage: Messages.CreateMatchMessage, outputChannel: MatchOutputChannel) {
-    return new TicTacToeMatch(createMatchMessage.options, createMatchMessage.players, outputChannel);
-  }
-}
 The new match function:
 
-* Must accept `MatchOptions`
-* May accept an output channel on which to communicate with players/spectators. 
 * Must return an implementation of the `Match` interface (i.e. must implement callback to listen for player communication).
+* May accept `MatchOptions`
+* May accept an output channel on which to monitor/communicate with players/spectators. 
 
 ```
   newMatchFunction(createMatchMessage: Messages.CreateMatchMessage, outputChannel: MatchOutputChannel) {
