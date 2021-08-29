@@ -1,5 +1,6 @@
 "use strict";
 exports.__esModule = true;
+exports.GameServer = void 0;
 var debug = require("debug")("sg:gameServer");
 var model_1 = require("@socialgorithm/model");
 var http = require("http");
@@ -57,7 +58,7 @@ var GameServer = (function () {
             debug("Received create match message %O", message);
             var playerTokens = _this.generateMatchTokens(message.players);
             message.players = message.players.map(function (player) { return playerTokens[player]; });
-            var matchID = uuid_1.v4();
+            var matchID = (0, uuid_1.v4)();
             var matchOutputChannel = {
                 sendGameEnded: _this.sendGameEnded(tournamentServerMatchSocket),
                 sendMatchEnded: _this.removeMatchAndSendMatchEnded(matchID, tournamentServerMatchSocket),
@@ -100,7 +101,7 @@ var GameServer = (function () {
         }; };
         this.generateMatchTokens = function (players) {
             var gameTokens = {};
-            players.forEach(function (player) { gameTokens[player] = uuid_1.v4(); });
+            players.forEach(function (player) { gameTokens[player] = (0, uuid_1.v4)(); });
             return gameTokens;
         };
         var app = http.createServer();
