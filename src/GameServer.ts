@@ -3,28 +3,28 @@ const debug = require("debug")("sg:gameServer");
 
 import { EventName, Messages, Player } from "@socialgorithm/model";
 import * as http from "http";
-import * as io from "socket.io";
+import { Server, Socket } from "socket.io";
 import { v4 as uuid } from "uuid";
 import { IMatch, MatchOutputChannel, NewMatchFn } from "./Match";
 import { ServerOptions } from "./ServerOptions";
 
 export class GameServer {
-    public io: SocketIO.Server;
+    public io: Server;
     private matches: Map<string, IMatch> = new Map();
     private playerToMatchID: Map<Player, string> = new Map();
-    private playerToSocket: Map<Player, io.Socket> = new Map();
+    private playerToSocket: Map<Player, Socket> = new Map();
 
     constructor(private gameInfo: Messages.GameInfoMessage, private newMatchFn: NewMatchFn, serverOptions?: ServerOptions) {
-        const app = http.createServer();
-        this.io = io(app);
+        const httpServer = http.createServer();
+        this.io = new Server(httpServer);
         const port = serverOptions.port || 5433;
 
-        app.listen(port);
+        httpServer.listen(port);
         // tslint:disable-next-line:no-console
         console.log(`Started Socialgorithm Game Server on ${port}`);
         debug(`Started Socialgorithm Game Server on ${port}`);
 
-        this.io.on("connection", (socket: io.Socket) => {
+        this.io.on("connection", (socket: Socket) => {
             if (socket.handshake.query && socket.handshake.query.token) {
                 this.onPlayerConnected(socket);
             } else {
@@ -33,15 +33,16 @@ export class GameServer {
         });
     }
 
-    private onTournamentServerConnected = (tournamentServerMatchSocket: io.Socket) => {
+    private onTournamentServerConnected = (tournamentServerMatchSocket: Socket) => {
         tournamentServerMatchSocket.emit(EventName.GameInfo, this.gameInfo);
         tournamentServerMatchSocket.on(EventName.CreateMatch, this.createMatch(tournamentServerMatchSocket));
     }
 
-    private onPlayerConnected = (playerSocket: io.Socket) => {
+    private onPlayerConnected = (playerSocket: Socket) => {
         debug("New player connection %O", playerSocket.handshake.query);
         // This is a uabc/player connection
-        const token = playerSocket.handshake.query.token;
+        const maybeToken = playerSocket.handshake.query.token;
+        const token = Array.isArray(maybeToken) ? maybeToken[0] : maybeToken;
         this.playerToSocket.set(token, playerSocket);
         playerSocket.on(EventName.Game__Player, this.sendPlayerMessageToGame(token));
 
@@ -80,7 +81,7 @@ export class GameServer {
         this.playerToSocket.delete(token);
     }
 
-    private createMatch = (tournamentServerMatchSocket: io.Socket) => (message: Messages.CreateMatchMessage) => {
+    private createMatch = (tournamentServerMatchSocket: Socket) => (message: Messages.CreateMatchMessage) => {
         debug("Received create match message %O", message);
         const playerTokens = this.generateMatchTokens(message.players);
         message.players = message.players.map(player => playerTokens[player]);
@@ -100,7 +101,7 @@ export class GameServer {
         tournamentServerMatchSocket.emit(EventName.MatchCreated, { playerTokens });
     }
 
-    private removeMatchAndSendMatchEnded = (matchID: string, tournamentServerMatchSocket: io.Socket) => (matchEndedMessage: Messages.MatchEndedMessage) => {
+    private removeMatchAndSendMatchEnded = (matchID: string, tournamentServerMatchSocket: Socket) => (matchEndedMessage: Messages.MatchEndedMessage) => {
         debug(`Match ${matchID} ended, removing and sending MatchEnded`);
 
         if (this.matches.has(matchID)) {
@@ -111,7 +112,7 @@ export class GameServer {
         tournamentServerMatchSocket.emit(EventName.MatchEnded, matchEndedMessage);
     }
 
-    private sendGameEnded = (tournamentServerSocket: io.Socket) => (gameEndedMessage: Messages.GameEndedMessage) => {
+    private sendGameEnded = (tournamentServerSocket: Socket) => (gameEndedMessage: Messages.GameEndedMessage) => {
         tournamentServerSocket.emit(EventName.GameEnded, gameEndedMessage);
     }
 
